@@ -1,0 +1,115 @@
+/**
+ * From Sexy undoclose
+ */
+.bold {
+    font-weight: bold;
+}
+
+.contentDiv {
+    line-height: 95%;
+    overflow-x: hidden;
+    overflow-y: auto;
+    text-align: left;
+    width: 400px;
+}
+
+.table {
+    width: 380px;
+}
+
+img {
+    margin: 1px 5px 0 0;
+    vertical-align: top;
+}
+
+.contentDiv a {
+    background: #F6F7FF;
+    background: -webkit-gradient(linear, left top, left bottom,color-stop(0.0, #F7F8FF),color-stop(1.0, #FFF));
+	border: 1px solid #F7F8FF;
+	border-radius: 4px;
+	color: #404352;
+	cursor: pointer;
+	display: block;
+	margin: 2px;
+	padding: 2px;
+	text-decoration: none;
+}
+.contentDiv a:hover
+{
+	background: #FFF;
+	webkit-box-shadow: 0 0px 3px rgba(0,80,128,0.5);
+}
+.contentDiv a div
+{
+	display: inline-block;
+	line-height: 120%;
+	margin: 3px 0 3px 0;
+	min-height: 11px;
+	overflow: hidden;
+	width: 270px;
+}
+a,a:hover,a:visited
+{
+	color: #404352;
+	text-decoration: none;
+}
+.maxh1
+{
+	line-height: 200% !important;
+	margin: -2px 0 0 0 !important;
+	max-height: 20px;
+}
+.maxh2
+{
+	max-height: 25px;
+}
+.maxh3
+{
+	max-height: 36px;
+}
+.maxh4
+{
+	max-height: 49px;
+}
+.maxh5
+{
+	max-height: 62px;
+}
+.maxh6
+{
+	max-height: 75px;
+}
+.contentDiv a span
+{
+	display: inline-block;
+	height: 12px;
+	margin: 3px 0 0 10px;
+	overflow: hidden;
+	padding: 0;
+	vertical-align: top;
+}
+.contentDiv a span b
+{
+	display: inline;
+}
+button
+{
+	background: #FFF;
+	border: 1px solid #E5ECFF;
+	border-radius: 4px;
+	color: #6791DA;
+	cursor: pointer;
+	padding: 0px 10px 0px 10px;
+	position: relative;
+	text-align: center;
+	text-decoration: none !important;
+	vertical-align: baseline;
+}
+button:hover
+{
+	background: #FFF;
+	border: 1px solid #FFF;
+	color: #000 !important;
+	webkit-box-shadow: 0 0px 3px rgba(0,80,128,0.5);
+}
+

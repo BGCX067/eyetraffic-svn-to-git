@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<markers>
+
+<marker nr="m1" name="Hotel Königshof" address="Karlsplatz 25, 80335 München" lat="48.139652" lng="11.565299" category="hotel" />
+
+<marker nr="m2" name="Hotel Europäischer Hof" address="Bayerstr. 31, 80335 München" lat="48.139315" lng="11.560117" category="hotel" />
+
+<marker nr="m3" name="Dolly-Bar" address="Schillerstr. 11a, 80336 München" lat="48.137568" lng="11.561286" category="bar" />
+
+<marker nr="m4" name="New-York" address="Sonnenstr. 25, 80331 München" lat="48.134948" lng="11.565932" category="bar" />
+
+<marker nr="m5" name="Diskothek maxSuite" address="Maximiliansplatz 16, 80333 München" lat="48.141821" lng="11.572047" category="disco" />
+
+<marker nr="m6" name="Soul City" address="Maximiliansplatz 5, 80333 München" lat="48.14215" lng="11.570641" category="disco" />
+
+<marker nr="m7" name="Cafe Schiller" address="Schillerstr. 3, 80336 München" lat="48.138907" lng="11.5612113" category="cafe" />
+
+<marker nr="m8" name="Cafe Restaurant im Parkhaus" address="Adolf-Kolping-Str. 10, 80336 München" lat="48.138141" lng="11.563045" category="cafe" />
+
+<marker nr="m9" name="Blues Cafe" address="Landwehrstr. 2, 80336 München" lat="48.136408" lng="11.564462" category="cafe" />
+
+<marker nr="m10" name="Cafe Mozart" address="Pettenkoferstr. 2, 80336 München" lat="48.1338596" lng="11.5652883" category="cafe" />
+
+<marker nr="m11" name="Bar Centrale" address="Ledererstr. 23, 80331 München" lat="48.136671" lng="11.579844" category="bar" />
+
+<marker nr="m12" name="The Atomic Café" address="Neuturmstr. 5, 80331 München" lat="48.138241" lng="11.581156" category="disco" />
+
+<marker nr="m13" name="Cafe Lotterleben" address="Frauenstr. 4, 80469 München" lat="48.134647" lng="11.575727" category="cafe" />
+
+</markers>

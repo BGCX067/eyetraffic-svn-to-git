@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+        <link type="text/css" href="css/eye.css" rel="stylesheet">
+        <link type="text/css" href="css/smoothness/jquery-ui-1.8.14.custom.css" rel="stylesheet" />
+        <script type="application/javascript" src="lib/jquery-1.7.min.js"></script>
+        <script type="text/javascript" src="lib/jquery-ui-1.8.14.custom.min.js"></script>
+        <script type="application/javascript" src="lib/jquery.template.js"></script>
+        <script type="application/javascript" src="lib/jquery.prettydate.js"></script>
+		<script type="text/javascript" src="lib/sparklines/jquery.sparkline.js"></script>
+		
+		<script type="text/javascript" src="lib/fancyzoom.min.js"></script>
+
+		<!--
+        <script type="text/javascript" src="extra/jquery.jsPlumb-1.0.2-min.js">
+        </script>
+        <script type="application/javascript" src="extra/jquery.mousewheel.js">
+        </script>
+        <script type="application/javascript" src="extra/jquery.timeline.js">
+        </script>
+        <link type="text/css" href="css/timeline.css" rel="stylesheet">
+        -->
+		<script type="application/javascript" src="lib/base64.js"></script>
+        <script type="application/javascript" src="config.js"></script>
+		<script src="http://maps.googleapis.com/maps/api/js?sensor=false" type="text/javascript"></script>
+		<!--<script src="http://maps.google.com/maps?file=api&amp;v=3&amp;sensor=false&amp;key=ABQIAAAAtEOPihzWueLlNCLMoB9gSRQzovFltyh3__eQzIYnI8zKDV9c-RSnWsxRr2N1XFC9jiUukMEh3_bzxw" type="text/javascript"></script>-->
+		
+		<script type="application/javascript" src="popup.js"></script>	
+        
+        <title>Eye Traffic</title>
+		
+		<!-- Maps deps -->
+		<!-- 
+		<link rel="stylesheet" type="text/css" href="css/map.css" />
+		<link rel="stylesheet" type="text/css" href="lib/map/ewindow/EWindow.css">
+		 -->
+        <!--<script type="text/javascript" src="http://www.google.com/jsapi?key=ABQIAAAAtEOPihzWueLlNCLMoB9gSRQzovFltyh3__eQzIYnI8zKDV9c-RSnWsxRr2N1XFC9jiUukMEh3_bzxw">
+        </script>
+        <script type="text/javascript">
+            google.load("maps", "2");
+            //google.load("jquery", "1");
+        </script>
+		<script src="data/cams.js" type="text/javascript">
+        </script>
+		<script src="lib/util.js" type="text/javascript">
+        </script>
+		<script src="lib/map/icons.js" type="text/javascript">
+        </script>
+		<script src="lib/map/more.js" type="text/javascript">
+        </script>
+        <script src="lib/map/rect.js" type="text/javascript">
+        </script>
+        <script src="lib/map/elabel.js" type="text/javascript">
+        </script>
+		<script src="lib/map/ewindow/EWindow.js" type="text/javascript">
+        </script>
+        <script src="lib/map/canvas.js" type="text/javascript">
+        </script>
+        <script src="lib/map/cookies.js" type="text/javascript">
+        </script>
+        <script src="lib/map/geocode.js" type="text/javascript">
+        </script>
+		<script src="lib/map/gmap.js" type="text/javascript">
+        </script>
+		<script src="lib/map/ctrl.js" type="text/javascript">
+        </script>
+		 <script type="text/javascript">
+            google.setOnLoadCallback(initialize);
+        </script>
+		-->
+    </head>
+    <body>
+        <div id="header">
+            <button name="refresh" id="refresh">Refresh</button>
+			<button name="convert" id="convert" class="debug">Convert</button>
+			<div id="history" title="History"></div>
+			<div id="links">
+				<a target="blank" href="maps.html" class="debug"><b>Map</b></a>
+				<a target="blank" href="popup.html" class="debug"><b>Popup</b>&nbsp;</a>
+	            <a target="blank" href="http://www.cita.lu">CITA</a>
+	            &nbsp;<a target="blank" href="http://www.lesfrontaliers.lu/index.php?p=parcours">Les frontaliers</a>
+	            &nbsp;<a target="blank" href="http://auto.rtl.lu/trafic/traficinfo/">RTL</a>
+	            &nbsp;<a target="blank" href="http://www.acl.lu/fr/trafic_news/info_trafic_luxembourg">ACL</a>
+	            &nbsp;<a target="blank" href="http://www.guideroutier.lu/">Guide routier</a>
+	            &nbsp;<a target="blank" href="http://www.driving.lu/index.php?module=auto&action=getListeCamera&idauto=1">driving.lu</a>
+	            &nbsp;<a target="blank" href="http://www.bison-fute.equipement.gouv.fr">Bison futé</a>
+	            &nbsp;<a target="blank" href="http://www.sanef.com/fr/travaux/">SANEF</a>
+			</div>
+        </div>
+        <div id="menu">
+        	<a id="_info" href="#linfo">Info</a>|<a id="_times" href="#ltimes">Times</a>|<a id="_cams" href="#lcams">Cams</a>|<a id="_maps" href="#lmaps">Maps</a>
+        </div>
+        <div id="main">
+            <div id="ptimes">
+                <a name="ltimes"></a>
+                <h2>Temps de parcours</h2>
+                <div id="times">
+                    <ul>
+                        <li><a href="#time-FRANCE">France</a></li>
+                        <li><a href="#time-BELGIQUE">Belgique</a></li>
+                        <li><a href="#time-LUX-SUD">Lux Sud</a></li>
+                        <li><a href="#time-LUX-EST">Lux Est</a></li>
+                        <li><a href="#time-LUX-HOL">Hollerich</a></li>
+                    </ul>
+                    <div class="time" id="time-FRANCE">
+                    </div>
+                    <div class="time" id="time-BELGIQUE">
+                    </div>
+                    <div class="time" id="time-LUX-SUD">
+                    </div>
+                    <div class="time" id="time-LUX-EST">
+                    </div>
+                    <div class="time" id="time-LUX-HOL">
+                    </div>
+                </div>
+            </div>
+            <div id="alerts">
+                <a name="linfo"></a>
+                <h2>Trafic info</h2>
+                <div class="content">
+                    <div id="flashinfo"></div>
+                    <div id="alert"></div>
+                </div>
+            </div>
+            <a name="lcams"></a>
+            <h2>Caméras</h2>
+            <div class="mtab" id="cams">
+                <ul>
+					<li><a href="#cam-A1">A1<span class="camdesc">Trèves</span></a></li>
+                    <li><a href="#cam-A3">A3<span class="camdesc">France</span></a></li>
+                    <li><a href="#cam-A4">A4<span class="camdesc">Esch</span></a></li>
+                    <li><a href="#cam-A6">A6<span class="camdesc">Belgique</span></a></li>
+                    <li><a href="#cam-A7">A7<span class="camdesc">Nord</span></a></li>
+                    <li><a href="#cam-A13">A13<span class="camdesc">Longwy-Sarrebruck</span></a></li>
+                </ul>
+				<div id="cam-A1">
+                </div>
+                <div id="cam-A3">
+                </div>
+                <div id="cam-A4">
+                </div>
+                <div id="cam-A6">
+                </div>
+                <div id="cam-A7">
+                </div>
+                <div id="cam-A13">
+                </div>
+            </div>
+            <a name="lmaps"></a>
+            <h2>Cartes</h2>
+            <div class="mtab" id="maps">
+                <ul>
+					<li><a href="#map-cita">CITA</a></li>
+					<li><a href="#map-tomtom">Tomtom</a></li>
+					<li><a href="#map-google">Google Maps</a></li>
+					<li><a href="#map-rtl">RTL</a></li>
+					<li><a href="#map-ir57">(fr) InfoRoute57</a></li>
+					<li><a href="#map-bison">(fr) Bison futé</a></li>
+					<li><a href="#map-mobilinfo">(be) Mobilinfo</a></li>
+					<li><a href="#map-wallonie">(be) Wallonie</a></li>
+					<li><a href="#map-verkehrsinfo">(de) Verkehrsinfo</a></li>
+					<li><a href="#map-swr3">(de) SWR3</a></li>
+                </ul>
+				<div id="map-cita"></div>
+				<div id="map-tomtom"></div>
+				<div id="map-google"><div id="gmap"></div></div>
+				<div id="map-rtl"></div>
+				<div id="map-ir57"></div>
+				<div id="map-bison"></div>
+				<div id="map-mobilinfo"></div>
+				<div id="map-wallonie"></div>
+				<div id="map-verkehrsinfo"></div>
+				<div id="map-swr3"></div>
+				<div id="map-custom" style="display:none;">
+					<div id="wrapper">
+            			<div id="header">
+			                <div id="location">
+			                    <span>Address:</span>
+			                    <input type="text" id="addressSource" value="wasserbillig"/><input type="button" value="Go!" onclick="searchMap();"/><a href="#" class="dirlink" onclick="showRoute();">Get Directions</a>
+			                </div>
+			                <div id="route">
+			                    <div id="routeSourceBox">
+			                        <span>Home:</span>
+			                        <input type="text" id="routeA" value="thionville, france"/><a href="#" class="dirlink" onclick="showLocation();">Find Location</a>
+			                    </div>
+			                    <div id="routeDestBox">
+			                        <span>Work:</span>
+			                        <input type="text" id="routeB" value="kirchberg, luxembourg"/><input type="button" value="Go!" onclick="getRoute();"/><a href="#" onclick="clearRoute();">Clear Route</a>
+			                    </div>
+			                </div>
+            			</div>
+            			<div id="main2">
+				            <div id="sidebar" class="left">
+				            	<div id="sidebar_cats">
+				            	</div>
+								<div id="sidebar_route">
+				            	</div>
+				            </div>
+							<div id="center" class="left">
+								<div id="map_canvas"style="width:600px;height:500px;">
+					            </div>
+					            <canvas id="mycanvas" width="1" height="1">
+					            </canvas>
+								<div id="outer_more"></div>
+							</div>
+							<div id="right" class="left">
+								<div id="catselector">
+									<span>Cameras: <input type="checkbox" id="cat_cams" onclick="selcat(this,'cams');" /></span><br/>
+									<span>Times: <input type="checkbox" id="cat_times" onclick="selcat(this,'times');" /></span> <br/>
+									<span>Current Position: <input type="checkbox" id="cat_position" onclick="selcat(this,'position');" /></span><br/>
+									<span>Route: <input type="checkbox" id="cat_route" onclick="selcat(this,'route');" /></span><br/>
+									<span>Directions: <input type="checkbox" id="cat_directions" onclick="selcat(this,'directions');" /></span><br/>
+							    </div>
+								<textarea id="jmarkers" rows="20" cols="50">
+			            		</textarea>
+							</div>
+						</div>
+		            	<div id="footer">
+			                <div id="defloc">
+			                    <a href="#" onclick="resetLocation();">Reset</a>
+			                    <a href="#" onclick="saveLocation();">Save</a>
+			                </div>
+			                <div id="sizeLinks">
+			                    <a href="#" onclick="setSize(0);">Small</a>
+			                    <a href="#" onclick="setSize(1);">Medium</a>
+			                    <a href="#" onclick="setSize(2);">Large</a>
+			                </div>
+			            </div>
+            		</div>
+            	</div>
+            </div>
+
+        <div id="footer">
+            <textarea class="debug" id="res" cols='60' rows='20'></textarea>
+			<!--
+            <div id="timeline" style="overflow-x: hidden; overflow-y: hidden; ">
+            <UL class="tl-events">
+            <LI class="welcome"><H2>Welcome to the interactive timeline of Google history!</H2>
+            <P>
+            Travel through time by dragging the timeline or the slider below. Click on any event to see more information.
+            </P>
+            <P>
+            </P>
+            </LI>
+            <LI class="first last"><H3>1995–1997</H3>
+            <UL class="column">
+            <LI class="doodle" id="event-1997-1-doodle"><A href="http://jqueryfordesigners.com/demo/scrollable-timelines.html#1997-1-doodle" hidefocus=""></A></LI>
+            <LI class="milestone" id="event-1995-when-larry-met-sergey"><A href="http://jqueryfordesigners.com/demo/scrollable-timelines.html#1995-when-larry-met-sergey" hidefocus=""><SPAN title="Milestones" class="tl-icon"><SPAN class="tl-msg"><SPAN class="tl-msg-inside">When Larry met Sergey</SPAN></SPAN></SPAN></A></LI>
+            <LI class="milestone" id="event-1996-new-search-tool-named-backrub"><A href="http://jqueryfordesigners.com/demo/scrollable-timelines.html#1996-new-search-tool-named-backrub" hidefocus=""><SPAN title="Milestones" class="tl-icon"><SPAN class="tl-msg"><SPAN class="tl-msg-inside">New search tool named BackRub</SPAN></SPAN></SPAN></A></LI>
+            <LI class="milestone" id="event-1996-backrub-search-index-grows"><A href="http://jqueryfordesigners.com/demo/scrollable-timelines.html#1996-backrub-search-index-grows" hidefocus=""><SPAN title="Milestones" class="tl-icon"><SPAN class="tl-msg"><SPAN class="tl-msg-inside">BackRub search index grows</SPAN></SPAN></SPAN></A></LI>
+            <LI class="milestone" id="event-1997-google-com-registered-as-a-domain"><A href="http://jqueryfordesigners.com/demo/scrollable-timelines.html#1997-google-com-registered-as-a-domain" hidefocus=""><SPAN title="Milestones" class="tl-icon"><SPAN class="tl-msg"><SPAN class="tl-msg-inside">Google.com registered as a domain</SPAN></SPAN></SPAN></A></LI>
+            </UL>
+            </LI>
+            <LI class="first last"><H3>1998</H3>
+            <UL class="column">
+            <LI class="doodle" id="event-1998-1-doodle"><A href="http://jqueryfordesigners.com/demo/scrollable-timelines.html#1998-1-doodle" hidefocus=""></A></LI>
+            <LI class="milestone" id="event-1998-andy-bechtolsheim-is-first-google-investor"><A href="http://jqueryfordesigners.com/demo/scrollable-timelines.html#1998-andy-bechtolsheim-is-first-google-investor" hidefocus=""><SPAN title="Milestones" class="tl-icon"><SPAN class="tl-msg"><SPAN class="tl-msg-inside">Andy Bechtolsheim is first Google investor</SPAN></SPAN></SPAN></A></LI>
+            <LI class="milestone" id="event-1998-danny-sullivan-s-early-review"><A href="http://jqueryfordesigners.com/demo/scrollable-timelines.html#1998-danny-sullivan-s-early-review" hidefocus=""><SPAN title="Milestones" class="tl-icon"><SPAN class="tl-msg"><SPAN class="tl-msg-inside">Danny Sullivan’s early review</SPAN></SPAN></SPAN></A></LI>
+            <LI class="milestone" id="event-1998-google-rents-a-silicon-valley-garage"><A href="http://jqueryfordesigners.com/demo/scrollable-timelines.html#1998-google-rents-a-silicon-valley-garage" hidefocus=""><SPAN title="Milestones" class="tl-icon"><SPAN class="tl-msg"><SPAN class="tl-msg-inside">Google rents a Silicon Valley garage</SPAN></SPAN></SPAN></A></LI>
+            <LI class="milestone" id="event-1998-google-incorporates"><A href="http://jqueryfordesigners.com/demo/scrollable-timelines.html#1998-google-incorporates" hidefocus=""><SPAN title="Milestones" class="tl-icon"><SPAN class="tl-msg"><SPAN class="tl-msg-inside">Google incorporates</SPAN></SPAN></SPAN></A></LI>
+            <LI class="milestone" id="event-1998-early-technical-specs-detailed"><A href="http://jqueryfordesigners.com/demo/scrollable-timelines.html#1998-early-technical-specs-detailed" hidefocus=""><SPAN title="Milestones" class="tl-icon"><SPAN class="tl-msg"><SPAN class="tl-msg-inside">Early technical specs detailed</SPAN></SPAN></SPAN></A></LI>
+            <LI class="milestone" id="event-1998-employee-1-craig-silverstein"><A href="http://jqueryfordesigners.com/demo/scrollable-timelines.html#1998-employee-1-craig-silverstein" hidefocus=""><SPAN title="Milestones" class="tl-icon"><SPAN class="tl-msg"><SPAN class="tl-msg-inside">Employee #1: Craig Silverstein</SPAN></SPAN></SPAN></A></LI>
+            <LI class="milestone" id="event-1998-google-named-top-search-engine"><A href="http://jqueryfordesigners.com/demo/scrollable-timelines.html#1998-google-named-top-search-engine" hidefocus=""><SPAN title="Milestones" class="tl-icon"><SPAN class="tl-msg"><SPAN class="tl-msg-inside">Google named Top Search Engine</SPAN></SPAN></SPAN></A></LI>
+            <LI class="culture" id="event-1998-first-google-friends-newsletter"><A href="http://jqueryfordesigners.com/demo/scrollable-timelines.html#1998-first-google-friends-newsletter" hidefocus=""><SPAN title="Culture" class="tl-icon"><SPAN class="tl-msg"><SPAN class="tl-msg-inside">First Google Friends Newsletter</SPAN></SPAN></SPAN></A></LI>
+            <LI class="homepage" id="event-1998-original-homepage-prototype"><A href="http://jqueryfordesigners.com/demo/scrollable-timelines.html#1998-original-homepage-prototype" hidefocus=""><SPAN title="Image" class="tl-icon"><SPAN class="tl-msg"><SPAN class="tl-msg-inside">Original homepage prototype</SPAN></SPAN></SPAN></A></LI>
+            </UL>
+            </LI>
+            </UL>
+            </div>
+            -->
+        </div>
+		
+    </body>
+</html>

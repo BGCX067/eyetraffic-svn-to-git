@@ -1,0 +1,17 @@
+{
+  "extension_name": {
+    "message": "Eye Traffic - Lux Info Trafic"
+  },
+  "extension_shortname": {
+    "message": "Info Trafic Luxembourg"
+  },
+  "extension_description": {
+    "message": "Info Trafic pour les frontaliers Luxembourg, Belgique, Allemagne"
+  },
+  "browser_action_tooltip_default": {
+    "message": "Eye Traffic - Lux Info Trafic"
+  } ,
+  "ALERT": {
+    "message": "Alerte Info trafic"
+  } 
+}

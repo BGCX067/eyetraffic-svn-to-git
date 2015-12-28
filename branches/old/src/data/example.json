@@ -1,0 +1,26 @@
+{"markers": [
+     {"lat":43.65654, "lng":-79.90138, "html":"Some stuff to display in the<br>First Info Window","label":"Marker One"},
+     {"lat":43.91892, "lng":-78.89231, "html":"Some stuff to display in the<br>Second Info Window","label":"Marker Two"},
+     {"lat":43.82589, "lng":-79.10040, "html":"Some stuff to display in the<br>Third Info Window","label":"Marker Three"}
+   ],
+   
+   "origin":"http://econym.org.uk/gmap/basic12.htm",
+
+
+ "lines": [
+     {"colour":"#FF0000", "width":2, "points":[ {"lat":43.65654 ,"lng":-79.90138 },
+                                                {"lat":43.91892 ,"lng":-78.89231 },
+                                                {"lat":43.82589 ,"lng":-79.10040 }
+                                              ]
+     },
+     {"colour":"#008800", "width":4, "points":[ {"lat":43.9078 ,"lng":-79.0264 },
+                                                {"lat":44.1037 ,"lng":-79.6294 },
+                                                {"lat":43.5908 ,"lng":-79.2567 },
+                                                {"lat":44.2248 ,"lng":-79.2567 },
+                                                {"lat":43.7119 ,"lng":-79.6294 },
+                                                {"lat":43.9078 ,"lng":-79.0264 }
+                                              ]
+     }
+   ]
+
+}

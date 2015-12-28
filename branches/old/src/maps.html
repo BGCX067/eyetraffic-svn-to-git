@@ -1,0 +1,277 @@
+<!DOCTYPE html "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+        <title>Google Maps JavaScript API Example</title>
+        <script type="text/javascript" src="http://www.google.com/jsapi?key=ABQIAAAAtEOPihzWueLlNCLMoB9gSRQzovFltyh3__eQzIYnI8zKDV9c-RSnWsxRr2N1XFC9jiUukMEh3_bzxw">
+        </script>
+        <!--
+        <script type="text/javascript" src="http://www.google.com/jsapi?autoload=%7B%22modules%22%3A%5B%7B%22name%22%3A%22maps%22%2C%22version%22%3A%222%22%7D%5D%7D"></script>
+        -->
+        <script type="text/javascript">
+            google.load("maps", "2");
+            google.load("jquery", "1");
+            var mylocation;
+            function getLocation(){
+                if (google.loader.ClientLocation) {
+                    var cl = google.loader.ClientLocation;
+                    //location = [cl.address.city, cl.address.region, cl.address.country].join(', ');
+                    mylocation = {
+                        lat: cl.latitude,
+                        lng: cl.longitude,
+                        html: 'This is my position : ' + cl.latitude + ',' + cl.longitude
+                    };
+                    var point = new GLatLng(mylocation.lat, mylocation.lng);
+                    var blueIcon = new GIcon(G_DEFAULT_ICON);
+                    blueIcon.image = "http://www.google.com/intl/en_us/mapfiles/ms/micons/blue-dot.png";
+                    var markerOptions = {
+                        icon: blueIcon
+                    };
+                    createMarker(point, mylocation.html, markerOptions);
+                    map.setCenter(point, 11);
+                }
+            }
+            
+            google.setOnLoadCallback(function(){
+                initialize();
+                getLocation();
+            });
+        </script>
+        <!--
+        <script src="http://maps.google.com/maps?file=api&amp;v=2&amp;sensor=false&amp;key=ABQIAAAAtEOPihzWueLlNCLMoB9gSRQzovFltyh3__eQzIYnI8zKDV9c-RSnWsxRr2N1XFC9jiUukMEh3_bzxw" type="text/javascript">
+        </script>
+        <script src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js" type="text/javascript">
+        </script>
+        -->
+		<script src="data/cams.js" type="text/javascript">
+        </script>
+		<script src="lib/map/rect.js" type="text/javascript">
+        </script>
+		<script src="lib/map/elabel.js" type="text/javascript">
+        </script>
+		<script src="lib/map/canvas.js" type="text/javascript">
+        </script>
+		<script src="lib/map/cookies.js" type="text/javascript">
+        </script>
+        <script type="text/javascript">
+//http://maps.gstatic.com/intl/en_us/mapfiles/kml/paddle/go.png
+//http://maps.gstatic.com/intl/en_us/mapfiles/kml/paddle/stop.png
+
+//http://www.google.com/intl/en_ALL/mapfiles/icon-dd-play-trans.png
+//http://www.google.com/intl/en_ALL/mapfiles/icon-dd-pause-trans.png
+//http://www.google.com/intl/en_ALL/mapfiles/icon-dd-stop-trans.png
+			
+			var map, lastmarker, gmarkers = [];
+			var nearRoad = true;
+			var drawDirection = true;
+					
+            function getJSON(url, cb){
+                var p = 'file:///C:/Documents%20and%20Settings/Valente/My%20Documents/Aptana%20Studio%20Workspace/EyeTraffic/src/';
+                $.ajax({
+                    url: p + url,
+                    success: function(data){
+                        var json = JSON.parse(data);
+                        cb(json);
+                    }
+                });
+                //$.getJSON(url, cb);
+            }
+            
+            function findNearest(point, points){
+                var n = {};
+                $(points).each(function(i, p){
+                    var d = point.distanceFrom(p);
+                    if (!np || (np && d < ld)) {
+                        n = {
+                            point: p,
+                            distance: d
+                        };
+                    }
+                });
+                return n;
+            }
+            
+            function calculateDistance(){
+                var dist = 0;
+                for (var i = 0; i < gpolys.length; i++) {
+                    dist += gpolys[i].Distance();
+                }
+                return "Path length: " + (dist / 1000).toFixed(2) + " km.<br/>" + (dist / 1609.344).toFixed(2) + " miles.";
+            }
+			
+			function updateMarkers(){
+				var o=[];
+				$(gmarkers).each(function(i, marker){
+                     var point = marker.getLatLng();
+					 o.push({
+					 	i:marker.index+1,
+						lat:point.lat(),
+						lng:point.lng(),
+						html:marker.html,
+						label:marker.getTitle()
+					 });
+                });
+				$('#jmarkers').html(JSON.stringify(o));
+			}
+            
+            function createMarker(point, html, options){
+                var marker = new GMarker(point, options || {});
+                function openwindow(){
+                    marker.openInfoWindowHtml(html, {
+                        maxWidth: 200
+                    });
+                }
+                GEvent.addListener(marker, "click", openwindow);
+                //GEvent.addListener(marker, "mouseover", openwindow);
+                map.addOverlay(marker);
+                return marker;
+            }
+			
+			function addEncodedPloyline(){
+				var encodedPolyline = new GPolyline.fromEncoded({
+					color: "#FF0000",
+					weight: 10,
+					points: "gxqmH_`kd@fEqbAwHcyAuo@g}@csAopAwqBal@k{BsVmb@_wA",
+					levels: "BBBBBBBB",
+					zoomFactor: 32,
+					numLevels: 4
+				});
+				map.addOverlay(encodedPolyline);
+			}
+			
+			function addOverlayRect(){
+				// Display a rectangle in the center of the map at about a quarter of
+		        // the size of the main map
+		        var bounds = map.getBounds();
+		        var southWest = bounds.getSouthWest();
+		        var northEast = bounds.getNorthEast();
+		        var lngDelta = (northEast.lng() - southWest.lng()) / 4;
+		        var latDelta = (northEast.lat() - southWest.lat()) / 4;
+		        var rectBounds = new GLatLngBounds(
+		            new GLatLng(southWest.lat() + latDelta,
+		                        southWest.lng() + lngDelta),
+		            new GLatLng(northEast.lat() - latDelta,
+		                        northEast.lng() - lngDelta));
+		        map.addOverlay(new Rectangle(rectBounds));
+			}
+            
+            function initialize(){
+                if (GBrowserIsCompatible()) {
+                    map = new GMap2(document.getElementById("map_canvas"));
+                    //map.addControl(new GLargeMapControl());
+                    //map.addControl(new GMapTypeControl());
+					//map.setUIToDefault();
+                    map.setCenter(new GLatLng(49.53679545, 6.1338043), 11);//lux
+					
+					/*
+					var c = getCookie();
+					if (c) {
+						map.setCenter(new GLatLng(c.lat, c.lng), c.zoom, map.getMapTypes()[c.maptype]);
+					}*/
+					
+					addEncodedPloyline();
+					initRect();
+					addOverlayRect();	
+					addOverlayCanvas(map);	
+		
+                    // Create our "cafe" marker icon
+                    var cafeIcon = new GIcon();
+                    cafeIcon.image = "http://chart.apis.google.com/chart?chst=d_map_pin_icon&chld=cafe|996600";
+                    cafeIcon.shadow = "http://chart.apis.google.com/chart?chst=d_map_pin_shadow";
+                    cafeIcon.iconSize = new GSize(12, 20);
+                    cafeIcon.shadowSize = new GSize(22, 20);
+                    cafeIcon.iconAnchor = new GPoint(6, 20);
+                    cafeIcon.infoWindowAnchor = new GPoint(5, 1);
+					
+                    var dirnRoadClick = new GDirections();
+                    var dirnRoadDrag = new GDirections();
+                    //click put marker on the road
+					GEvent.addListener(dirnRoadClick, "load", function(){
+        				var n = dirnRoadClick.getPolyline().getVertexCount();
+                        var p = dirnRoadClick.getPolyline().getVertex(n-1);
+                        addMarker(p);
+						if (drawDirection && gmarkers.length>0) {
+							map.addOverlay(dirnRoadClick.getPolyline());
+						}
+						updateMarkers();
+                    });
+                    //drag move marker on the road
+					GEvent.addListener(dirnRoadDrag, "load", function(){
+                        var p = dirnRoadDrag.getPolyline().getVertex(0);
+                        lastmarker.setPoint(p);
+						updateHtml(lastmarker, p);
+						updateMarkers();
+                    });
+                    function updateHtml(marker, point){
+                        marker.bindInfoWindowHtml(getHtml(point, marker.index));
+                    }
+                    function getHtml(point, index){
+                        return 'Point ' + (index+1) + '<br/>lat:' + point.lat() + '<br/>lng:' + point.lng();
+                    }
+                    function addMarker(point){
+                        var index = gmarkers.length;
+                        var marker = createMarker(point, getHtml(point, index), {
+                            draggable: true,
+                            icon: cafeIcon
+                        });
+                        marker.index = index;
+                        gmarkers.push(marker);
+                        GEvent.addListener(marker, "dragend", function(point){
+                            lastmarker = marker;
+                            var p = marker.getPoint();
+                            if (nearRoad) {
+								dirnRoadDrag.loadFromWaypoints([p.toUrlValue(6), p.toUrlValue(6)], {
+									getPolyline: true
+								});
+							} else {
+								updateHtml(marker, point);
+								updateMarkers();
+							}
+                        });
+                    }
+                    GEvent.addListener(map, "click", function(overlay, point, overlaylatlng){
+                        if (overlay) {
+                            return false;
+                        }
+                        if (nearRoad) {
+                            var sp = (gmarkers && gmarkers.length>0)?(gmarkers[gmarkers.length - 1].getPoint()):point.toUrlValue(6);
+							dirnRoadClick.loadFromWaypoints([sp, point.toUrlValue(6)], {
+                                getPolyline: true
+                            });
+                        } else {
+                            addMarker(point);
+                        }
+                    });
+                    //$.getJSON("data/cams.json", function(json){
+                    var json = data_cams;
+                    //console.log(json);
+                    $(json.markers).each(function(i, marker){
+                        var point = new GLatLng(marker.lat, marker.lng);
+                        createMarker(point, marker.html);
+                    });
+                    $(json.lines).each(function(i, line){
+                        var pts = [];
+                        for (var j = 0; j < line.points.length; j++) {
+                            pts[j] = new GLatLng(line.points[j].lat, line.points[j].lng);
+                        }
+                        map.addOverlay(new GPolyline(pts, line.colour, line.width));
+                    });
+                    //});
+                }
+            }
+			
+	   //window.onload = initialize;
+	   window.onunload = function(){
+	   		setCookie();
+    		GUnload();
+	   };
+        </script>
+    </head>
+    <body>
+        <div id="map_canvas" style="width: 1000px; height: 600px">
+        <!--div id="map_canvas" style="width: 500px; height: 300px"-->
+        </div>
+		<canvas id="mycanvas" width="1" height="1"></canvas> 
+		<textarea id="jmarkers" rows="10" cols="80"></textarea>
+    </body>
+</html>

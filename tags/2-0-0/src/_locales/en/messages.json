@@ -1,0 +1,17 @@
+{
+  "extension_name": {
+    "message": "Eye Traffic - Lux traffic info"
+  },
+  "extension_shortname": {
+    "message": "Luxembourg Traffic Info"
+  },
+  "extension_description": {
+    "message": "Traffic info on Luxemburg, Germany, Belgium"
+  },
+  "browser_action_tooltip_default": {
+    "message": "Eye Traffic - Lux traffic info"
+  } ,
+  "ALERT": {
+    "message": "Info traffic alert"
+  } 
+}

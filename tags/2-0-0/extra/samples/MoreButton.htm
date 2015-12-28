@@ -1,0 +1,282 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <!-- http://www.wolfpil.de/more-button.html -->
+		<link rel="stylesheet" type="text/css" href="include.css" />
+        <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+        <meta name="author" content="Wolfgang Pichler" />
+        <meta name="URL" content="http://www.wolfpil.de" />
+        <title>More... Button</title>
+        <style type="text/css">
+            
+            body {
+                height: 600px;
+                font-family: Arial;
+            }
+            
+            #mapdiv {
+                position: absolute;
+                top: 50px;
+                left: 50px;
+                width: 590px;
+                height: 400px;
+                overflow: hidden;
+            }
+            
+            #search {
+                position: absolute;
+                top: 460px;
+                left: 150px;
+            }
+            
+            #more_inner {
+                text-align: center;
+                font-size: 12px;
+                background-color: #fff;
+                color: #000;
+                border: 1px solid #fff;
+                border-right-color: #b0b0b0;
+                border-bottom-color: #c0c0c0;
+                width: 7em;
+                cursor: pointer;
+            }
+            
+            #more_inner.highlight {
+                font-weight: bold;
+                border: 1px solid #483D8B;
+                border-right-color: #6495ed;
+                border-bottom-color: #6495ed;
+            }
+            
+            #box {
+                position: absolute;
+                top: 20px;
+                left: 0px;
+                margin-top: -1px;
+                font-size: 12px;
+                padding: 6px 4px;
+                width: 120px;
+                background-color: #fff;
+                color: #000;
+                border: 1px solid gray;
+                border-top: 1px solid #e2e2e2;
+                display: none;
+                cursor: default;
+            }
+            
+            #box.highlight {
+                width: 119px;
+                border-width: 2px;
+            }
+            
+            #boxlink {
+                color: #a5a5a5;
+                text-decoration: none;
+                cursor: default;
+                margin-left: 33px;
+            }
+            
+            #boxlink.highlight {
+                color: #0000cd;
+                text-decoration: underline;
+                cursor: pointer;
+            }
+        </style>
+        <script src="http://maps.google.com/maps?file=api&amp;v=2&amp;sensor=false&amp;key=ABQIAAAAhQIJ9FTkp23D6HaXMJMeRRTXnL6SBvrLRMFsTBmYgGunZS99UhT2z4LQgj_la02lLg0Iuz7ZyYnybA" type="text/javascript">
+        </script>
+    </head>
+    <body onload="buildMap();" onunload="GUnload();">
+        <h3 style="margin-left:40px">More... Button [Updated with webcams layer]</h3>
+        <div id="mapdiv">
+        </div>
+        <form action="" onsubmit="showAddress(this.addr.value);return false;">
+            <div id="search">
+                <input type="text" size="45" id="addr" name="addr" title="Placename or address" /><input type="submit" value=" Search " />
+            </div>
+        </form>
+        <div class="include">
+            <a href="index.html">Back</a>
+        </div>
+        <div id="outer_more">
+            <form action="">
+                <div id="box">
+                    <input name="mark" type="checkbox" onclick="switchLayer(this.checked, layers[0].obj);"/> Photos 
+                    <br/>
+                    <input name="mark" type="checkbox" onclick="switchLayer(this.checked, layers[1].obj);"/> Videos 
+                    <br/>
+                    <input name="mark" type="checkbox" onclick="switchLayer(this.checked, layers[2].obj);"/> Wikipedia 
+                    <br/>
+                    <input name="mark" type="checkbox" onclick="switchLayer(this.checked, layers[3].obj);"/> Webcams<hr style="width:92%;height:1px;border:1px;color:#e2e2e2;background-color:#e2e2e2;"/><a id="boxlink" href="javascript:void(0)" onclick="hideAll();">Hide all</a>
+                </div>
+            </form>
+        </div>
+        <div id="description" style="position:absolute; top:100px; left:670px; margin-right:50px">
+            <p>This more button is a sort of copy of the more dropdown of Google Maps to display additional layers. </p>
+            <p>The button also 'remembers' the previously chosen layers. After checking a checkbox the button will be clickable: you can click on the button to hide the visible layer(s), then click on the button again to show them again.</p>
+            <p>Here is the <a href="http://spreadsheets.google.com/pub?key=p9pdwsai2hDN-cAocTLhnag">coverage list</a> of officially documented layers.</p>
+        </div>
+        <script type="text/javascript">
+            //<![CDATA[
+            var map, timer;
+            var chosen = [];
+            /* Array of GLayers
+             * The 'name' property is not being used here
+             */
+            var layers = [{
+                name: "Pano",
+                obj: new GLayer("com.panoramio.all")
+            }, {
+                name: "Tube",
+                obj: new GLayer("com.youtube.all")
+            }, {
+                name: "Wiki",
+                obj: new GLayer("org.wikipedia.en")
+            }, {
+                name: "Cams",
+                obj: new GLayer("com.google.webcams")
+            }];
+            function buildMap(){
+                map = new GMap2(document.getElementById("mapdiv"));
+                var point = new GLatLng(48.69096, -50.273437);
+                map.setCenter(point, 2);
+                map.addControl(new GLargeMapControl3D());
+                map.enableScrollWheelZoom();
+                // Add selectable terrain map
+                map.addMapType(G_PHYSICAL_MAP);
+                var hControl = new GHierarchicalMapTypeControl();
+                hControl.addRelationship(G_SATELLITE_MAP, G_HYBRID_MAP, "Labels", false);
+                map.addControl(hControl);
+                // Add the self created control
+                map.addControl(new MoreControl());
+            }
+            
+            function hideAll(){
+                var boxes = document.getElementsByName("mark");
+                for (var i = 0; i < boxes.length; i++) {
+                    if (boxes[i].checked) {
+                        boxes[i].checked = false;
+                        switchLayer(false, layers[i].obj);
+                        chosen.push(i);
+                    }
+                }
+            }
+            
+            function checkChecked(){
+                /* Returns true if a checkbox is still checked
+                 *  otherwise false
+                 */
+                var boxes = document.getElementsByName("mark");
+                for (var i = 0; i < boxes.length; i++) {
+                    if (boxes[i].checked) return true;
+                }
+                return false;
+            }
+            
+            function switchLayer(checked, layer){
+                /* Function was originally borrowed from Esa:
+                 *  http://esa.ilmari.googlepages.com/dropdownmenu.htm
+                 */
+                var layerbox = document.getElementById("box");
+                var boxlink = document.getElementById("boxlink");
+                var button = document.getElementById("more_inner");
+                if (checked) {
+                    map.addOverlay(layer);
+                    // Reset chosen array
+                    chosen.length = 0;
+                    /* Highlight the link and
+                     *  make the button font bold.
+                     */
+                    boxlink.className = "highlight";
+                    layerbox.className = "highlight";
+                    button.className = "highlight";
+                } else {
+                    map.removeOverlay(layer);
+                    /*  Reset the link and the button
+                     * if all checkboxes were unchecked.
+                     */
+                    if (!checkChecked()) {
+                        boxlink.blur();
+                        boxlink.className = "";
+                        layerbox.className = "";
+                        button.className = "";
+                    }
+                }
+            }
+            
+            function showLayerbox(){
+                if (window.timer) clearTimeout(timer);
+                document.getElementById("box").style.display = "block";
+                var button = document.getElementById("more_inner");
+                button.style.borderBottomWidth = "4px";
+                button.style.borderBottomColor = "white";
+            }
+            
+            function setClose(){
+                var layerbox = document.getElementById("box");
+                var button = document.getElementById("more_inner");
+                var bottomColor = checkChecked() ? "#6495ed" : "#c0c0c0";
+                timer = window.setTimeout(function(){
+                    layerbox.style.display = "none";
+                    button.style.borderBottomWidth = "1px";
+                    button.style.borderBottomColor = bottomColor;
+                }, 400);
+            }
+            
+            function toggleLayers(){
+                if (chosen.length > 0) {
+                    /* Make an independent copy of chosen array since switchLayer()
+                     *  resets the chosen array, which may not be useful here.
+                     */
+                    var copy = chosen.slice();
+                    for (var i = 0; i < copy.length; i++) {
+                        var index = parseInt(copy[i]);
+                        switchLayer(true, layers[index].obj);
+                        document.getElementsByName("mark")[index].checked = true;
+                    }
+                } else {
+                    hideAll();
+                }
+            }
+            
+            function MoreControl(){
+            };
+            MoreControl.prototype = new GControl();
+            MoreControl.prototype.initialize = function(map){
+                var more = document.getElementById("outer_more");
+                var buttonDiv = document.createElement("div");
+                buttonDiv.id = "morebutton";
+                buttonDiv.title = "Show/Hide Layers";
+                buttonDiv.style.border = "1px solid black";
+                buttonDiv.style.width = "86px";
+                var textDiv = document.createElement("div");
+                textDiv.id = "more_inner";
+                textDiv.appendChild(document.createTextNode("More..."));
+                buttonDiv.appendChild(textDiv);
+                // Register Event handlers
+                more.onmouseover = showLayerbox;
+                more.onmouseout = setClose;
+                buttonDiv.onclick = toggleLayers;
+                // Insert the button just after outer_more div
+                more.insertBefore(buttonDiv, document.getElementById("box").parentNode);
+                // Remove the whole div from its location and reinsert it to the map
+                map.getContainer().appendChild(more);
+                return more;
+            };
+            MoreControl.prototype.getDefaultPosition = function(){
+                return new GControlPosition(G_ANCHOR_TOP_LEFT, new GSize(278, 7));
+            };
+            function showAddress(address){
+                var geocoder = new GClientGeocoder();
+                geocoder.getLatLng(address, function(point){
+                    if (!point) {
+                        alert(address + " not found.");
+                    } else {
+                        map.setCenter(point, 14);
+                    }
+                });
+            }
+            
+            //]]>
+        </script>
+    </body>
+</html>

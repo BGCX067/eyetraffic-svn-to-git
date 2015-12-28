@@ -1,0 +1,366 @@
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>GoogleReaderPlus Icon Background</title>
+        <script type="application/javascript" src="lib/jquery-1.4.2.min.js">
+        </script>
+        <script type="application/javascript" src="lib/webkit.js">
+        </script>
+        <script type="application/javascript" src="lib/xml2json.js">
+        </script>
+        <script type="application/javascript" src="config.js">
+        </script>
+        <script type="application/javascript">
+//UTF8: é
+var defaultPrefs = {
+	badge: {id:6,interval: 10}, 
+	limit:{orange:10, red:20}
+};
+//TODO: recheck average values on a long period
+var averages = {1:13,2:19,3:9,4:19,5:7,6:8,7:17,8:8,9:10,10:13,11:13,12:18,13:22,14:28,15:14,16:19,17:26,18:7,19:14,20:18};
+
+var prefs=getPrefs();
+if (!prefs){
+	setPrefs(defaultPrefs);
+}
+if (!prefs.limit){
+	prefs.limit=defaultPrefs.limit;
+}
+//var notifier = new Notifier();
+var tictac;
+newTictac(true);
+
+chrome.extension.onRequest.addListener(function(a, sender, callback){
+    if (a.message === 'xhr') {
+        request(a, false, callback);
+    } else if (a.message === 'badge') {
+        updateBadge(a, callback);
+    } else if (a.message === 'prefs') {
+        monitorAverages();
+		callback(prefs);
+    } else if (a.message === 'updatetimes') {
+        updateTimes(a, callback);
+    } else if (a.message === 'updatealerts') {
+        updateAlerts(a, callback);
+    } else if (a.message === 'updateflashs') {
+        updateFlashs(a, callback);
+    }else if (a.message === 'updateprefs') {
+        updateprefs(a, callback);
+    }else if (a.message === 'history') {
+        getHistory(a, callback);
+    }
+});
+
+
+var historyValues = {};
+function getHistory(a, cb){
+	var values = historyValues[a.id];
+	//fit data of 1 hour into 20 points
+	if (!values){
+		return;
+	}
+	
+	//Limit on 1 hour for 20px
+	var rangetime = 3600, rangeplots=20;
+	interval = getInterval(); //60s
+	var npts = Math.max(0, Math.round(rangetime/interval));
+	var len=values.length;
+	var size = Math.min(len, npts);
+	var step = Math.max(1,Math.round(size/rangeplots));
+	var res=[], start = Math.max(0,len-npts);
+	for (var i=start; i<len; i+=step){
+		res.push(values[i]);
+	}
+
+	var limit = getLimits(a.id);
+	
+	cb({
+		limit:limit,
+		values:res
+	});
+}
+
+function showAverages(){
+	console.log("Averages:");
+	var av = getAverages();
+	var o = JSON.stringify(av);
+	console.log(o);
+}
+	
+function monitorAverages(){
+	showAverages();
+	window.setInterval(showAverages,3600000);//1h
+}
+
+function getAverages(){
+	var averageValues={};
+	$.each(historyValues, function(id, values){
+		var sum=0, len=values.length;
+		for (var i = 0; i < len; i++) {
+			sum += values[i];
+		}
+		averageValues[id]=Math.round(sum/len);
+	});
+	return averageValues;
+}
+
+function updateprefs(a, cb){
+	if (a.badge) {
+		prefs = getPrefs();
+		if (a.badge.id) {
+			prefs.badge.id = a.badge.id;
+		}
+		if (a.badge.interval) {
+			prefs.badge.interval = a.badge.interval;
+		}
+		setPrefs(prefs);
+		newTictac(true);
+		cb(prefs);
+	}
+}
+function setPrefs(prefs, cleanall){
+    if (cleanall){
+		localStorage.clear();
+	}
+	localStorage.setItem('prefs', JSON.stringify(prefs));
+}
+
+function getPrefs(){
+    var id;
+    var textPrefs = localStorage.getItem('prefs');
+    var prefs = (textPrefs) ? JSON.parse(textPrefs) : false;
+    //prefs = checkPrefs(prefs);
+    return prefs;
+}
+
+function getPref(option){
+    if (prefs && typeof prefs[option] !== "undefined") {
+        return prefs[option];
+    } else {
+        return false;
+    }
+}
+
+function getLimits(id){
+	return (averages[id])?{
+			red: Math.round(averages[id] * 1.7),
+			orange: Math.round(averages[id] * 1.2)
+	}:prefs.limit;
+}
+
+function updateBadge(a, cb){				
+	//Send time to badge
+    var time = parseInt(a.time, 10);
+
+	var limit = getLimits(a.id);
+		
+    var color = 'Green';
+    var bcolor = [0, 255, 0, 255];
+    if (time > limit.red) {
+        color = 'Red';
+        bcolor = [255, 0, 0, 255];
+    } else if (time > limit.orange) {
+        color = 'Orange';
+        bcolor = [255, 143, 53, 255];
+    }
+    chrome.browserAction.setBadgeText({
+        text: '' + time
+    });
+    chrome.browserAction.setBadgeBackgroundColor({
+        color: bcolor
+    });
+	var icon = 'images/16/Box_' + color + '.png';
+    chrome.browserAction.setIcon({
+        path: icon
+    });
+	
+	var title= ''+timeMappings[a.id].text + '\n' + time + ' minutes';
+    chrome.browserAction.setTitle({
+        title: title
+    });
+	
+	//var geo = new Geolocation();
+	//geo.getCurrentPosition();
+	/*if (!notifier.notify(icon, title, 'Time is ' + time + ' minutes')){
+		notifier.requestPermission(function(status){
+			console.log('statusPermission='+status);
+		});
+	}
+	*/
+	
+    if (cb) {
+        cb(null);
+    }
+}
+
+function newTictac(forceNow){
+	//console.log('newTictac-'+forceNow);
+	if (tictac) {
+		window.clearInterval(tictac);
+	}
+	badgeprefs = getPref('badge');
+	interval = getInterval();
+	//console.log('interval='+interval+';id='+badgeprefs.id);
+	tictac = window.setInterval(updateTimes, interval * 1000);
+	if (forceNow){
+		updateTimes();
+	}
+}
+
+function getInterval(){
+	return (badgeprefs && badgeprefs.interval) ? badgeprefs.interval : 60;
+}
+
+//Temps de parcours etat.lu
+function updateTimes(a, callback){
+	xhr({
+        method: 'GET',
+        url: urlTime,
+        dataType: 'text'
+    }, function(xhr){
+        var m, times = {}, data = xhr.responseText;
+        //&1A6_lux_sud=LUX-SUD  24 min.
+        while ((m = reTime.exec(data)) !== null) {
+            var id = m[1], code = m[2], zone = m[3], time = m[4];
+			if (time==='FLUIDE'){
+				time=0;
+			}else{
+				var n = /\d+/.exec(time);
+				if (n){
+					time=parseInt(n[0],10);
+				}else{
+					time=0;
+				}
+			}
+			
+            if (!times[zone]) {
+                times[zone] = [];
+            }
+            times[zone].push({id:id,code:code,time:time});
+			if (!historyValues[id]){
+				historyValues[id]=[];
+			}
+			historyValues[id].push(time);
+            if (badgeprefs && (''+badgeprefs.id) === id ) {
+                updateBadge({
+                    id:id,
+					time: time,
+					code:code
+                });
+            }
+        }
+        if (callback) {
+            callback(times);
+        }
+    });
+}
+
+//alert info cita.lu
+function updateAlerts(a, callback){
+    xhr({
+        method: 'GET',
+        url: urlAlert,
+        dataType: 'xml'
+    }, function(xhr){
+        var o = JSON.parse(xhr.responseJson);
+        var channel = o.rss.channel;
+        if (callback) {
+            callback(channel);
+        }
+    });
+}
+
+//flashinfo lesfrontaliers.lu
+function updateFlashs(a, callback){
+    xhr({
+        method: 'GET',
+        url: urlFlashInfo,
+        dataType: 'text'
+    }, function(xhr){
+        var news, m, data = xhr.responseText;
+        m = reFlashInfoLF.main.exec(data);
+        if (m && m[1]) {
+            var n = reFlashInfoLF.title.exec(m[1]), p = reFlashInfoLF.content.exec(m[1]);
+            var title = n[1], content = p[1];
+            news = {
+                title: title,
+                content: content
+            };
+            if (callback) {
+                callback(news);
+            }
+        }
+    });
+}
+
+function xhr(a, cb){
+    request(a, true, cb);
+}
+
+function request(a, local, cb){
+    var xhr = new XMLHttpRequest();
+    var method = a.method || 'get';
+    var url = a.url;
+    if (a.parameters && (method.toLowerCase() == 'get')) {
+        var params = [];
+        for (var k in a.parameters) {
+            params.push(k + '=' + encodeURIComponent(a.parameters[k]));
+        }
+        var sep = (url.indexOf('?') > 0) ? '&' : '?';
+        url += sep + params.join('&');
+    }
+    xhr.open(a.method || 'get', url, true);
+    //headers
+    if (a.headers) {
+        for (var kh in a.headers) {
+            xhr.setRequestHeader(kh, a.headers[kh]);
+        }
+    }
+    if (cb) {
+        a.onreadystatechange = true;//Chrome extesnion looks on readystatechange
+    }
+    xhr.onreadystatechange = function(o){
+        if (xhr.readyState == 4) {
+            var responseJson = false;
+            if (a.dataType === 'xml' && xhr.responseXML) {
+                responseJson = xml2json(xhr.responseXML, '');
+            }
+            cb({
+                responseJson: responseJson,
+                responseText: xhr.responseText,
+                responseHeaders: xhr.responseHeaders,
+                status: xhr.status,
+                statusText: xhr.statusText,
+                request: a
+            });
+        }
+    };
+    try {
+        xhr.send(a.data || {});
+    } catch (e) {
+        var o = {
+            responseText: e.message || 'Error',
+            status: (e.name || '') + ' ' + (e.code || 0),
+            statusText: (e.name || '') + ' ' + (e.code || 0),
+            error: e
+        };
+        if (local && typeof a.onerror === "function") {
+            a.onerror.call(this, o);
+        } else {
+            cb(o);
+        }
+    }
+}
+function callb(cb, data){
+    if (cb && typeof cb === 'function'){
+		cb(data||null);
+	}              			
+}               			
+
+                    
+        </script>
+    </head>
+    <body>
+        <!--canvas id="canvas" width="19" height="19"></canvas-->
+    </body>
+</html>

@@ -1,0 +1,188 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <link rel="stylesheet" type="text/css" href="Mapbox_files/include.css" />
+        <meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
+        <meta name="author" content="Wolfgang Pichler" />
+        <meta name="URL" content="http://www.wolfpil.de" />
+        <!-- Resizing code partially borrowed from:
+        http://yardsales.lizndom.com/DynamicallyResizeGoogleMapsWithMouse.html -->
+		<title>Map in a Box</title>
+        <script src="http://maps.google.com/maps?file=api&amp;v=2&amp;sensor=false&amp;key=ABQIAAAAhQIJ9FTkp23D6HaXMJMeRRTXnL6SBvrLRMFsTBmYgGunZS99UhT2z4LQgj_la02lLg0Iuz7ZyYnybA" type="text/javascript">
+        </script>
+    </head>
+    <body>
+        <h3>Map in a Draggable and Resizable Box</h3>
+        <div id="drag" style="position:absolute; top:50px; left:230px; visibility:hidden; z-index:10">
+            <table cellspacing="0" cellpadding="0">
+                <tr>
+                    <td style="height:31px;background-color:#F5FFFA;cursor:move; border-style:dashed; border-color:gray; border-width:1px 1px 0 1px;text-align:right;" onmousedown="dragstart(event)">
+                        <a style="color:gray;text-decoration:none;margin-right:8px;" href="#" onclick="hideMap()">Close <img src="Mapbox_files/close.gif" border="0" width="14" height="13" alt="" /></a>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <div id="map" style="width:280px;height:288px;overflow:hidden; border:1px solid black">
+                        </div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div style="position:absolute; top:50px;left:20px; width:160px;">
+            <a href="#" onclick="loadMap(54.78333, 9.43333, 'Flensburg')">Load Flensburg</a>
+            <br/>
+            <a href="#" onclick="loadMap(51.226076, 6.788477, 'Düsseldorf')">Load D&uuml;sseldorf</a>
+            <br/>
+            <a href="#" onclick="loadMap(47.999025, 7.829732, 'Freiburg')">Load Freiburg</a>
+            <p style="font-size:smaller">Drag the map at the upper gap. To resize the map drag the rectangle on the right hand side of the bottom of the map.</p>
+        </div>
+        <div class="include">
+            <a href="index.html">Back</a>
+        </div>
+        <script type="text/javascript">
+            //<![CDATA[
+            var map, box;
+            var draggable = false, resizable = false;
+            var mouseX, mouseY, drawnX, drawnY, diffX, diffY;
+            var typecontrol = new GMapTypeControl(true);
+            window.onload = function(){
+                // Make the variable box global
+                box = document.getElementById("drag");
+                // Register mouse move listener
+                document.onmousemove = watchMouse;
+                // Load a map initially
+                loadMap(54.78333, 9.43333, 'Flensburg');
+            }
+            window.onunload = function(){
+                // Make sure that GUnload() is called when necessary on unload
+                if (box.style.visibility == "visible") GUnload();
+            }
+            // Mouse move listener
+            function watchMouse(e){
+                // Include possible scroll values
+                var sx = window.scrollX || document.documentElement.scrollLeft || 0;
+                var sy = window.scrollY || document.documentElement.scrollTop || 0;
+                if (!e) e = window.event; // IEs event definition
+            
+                mouseX = e.clientX + sx;
+                mouseY = e.clientY + sy;
+                /* Direction of mouse movement
+                 *  deltaX: -1 for left, 1 for right
+                 *  deltaY: -1 for up, 1 for down
+                 */
+                var deltaX = mouseX - diffX;
+                var deltaY = mouseY - diffY;
+                // Store difference in global variables
+                diffX = mouseX;
+                diffY = mouseY;
+                if (resizable) { // The resize button is being held
+            
+                    changeMapSize(deltaX, deltaY);
+                } else if (draggable) { // The box is being dragged
+            
+                    box.style.left = (mouseX - drawnX) + "px";
+                    box.style.top = (mouseY - drawnY) + "px";
+                }
+                return false;
+            }
+            
+            function dragstart(e){ // Calculate mouse position for dragging
+            
+                draggable = true;
+                drawnX = mouseX - parseInt(box.style.left);
+                drawnY = mouseY - parseInt(box.style.top);
+                /* Avoid selecting the content
+                 * of the box while dragging
+                 */
+                if (e.cancelable) {
+                    e.preventDefault();
+                }
+                if (window.event) {
+                    window.event.returnValue = false;
+                }
+                // The box is being dropped
+                box.onmouseup = function(){
+                    draggable = false;
+                }
+            }
+            
+            function loadMap(lat, lng, name){
+                if (GBrowserIsCompatible()) {
+                    var point = new GLatLng(lat, lng);
+                    map = new GMap2(document.getElementById("map"));
+                    map.setCenter(point, 12, G_NORMAL_MAP);
+                    map.addControl(new GSmallZoomControl());
+                    var marker = new GMarker(point);
+                    map.addOverlay(marker);
+                    GEvent.addListener(marker, "click", function(){
+                        marker.openInfoWindowHtml(name);
+                    });
+                    // Add the self created ResizeControl
+                    map.addControl(new ResizeControl());
+                    box.style.visibility = "visible";
+                    // Add control to switch map types if mapdiv was broad enough
+                    if (typecontrol.visible) map.addControl(typecontrol);
+                }
+            }
+            
+            function hideMap(){
+                box.style.visibility = "hidden";
+                GUnload();
+            }
+            
+            function ResizeControl(){
+            };
+            ResizeControl.prototype = new GControl();
+            ResizeControl.prototype.initialize = function(map){
+                var resizeButton = document.createElement("div");
+                resizeButton.style.width = "20px";
+                resizeButton.style.height = "20px";
+                resizeButton.style.backgroundImage = "url('Mapbox_files/resize.gif')";
+                resizeButton.onmousedown = function(){
+                    resizable = true;
+                }
+                document.onmouseup = function(){
+                    resizable = false;
+                }
+                var container = map.getContainer();
+                container.appendChild(resizeButton);
+                /* Move the 'Terms of Use' 25px to the left
+                 * to make sure that it's fully readable
+                 */
+                var terms = container.childNodes[2];
+                terms.style.marginRight = "25px";
+                return resizeButton;
+            }
+            ResizeControl.prototype.getDefaultPosition = function(){
+                return new GControlPosition(G_ANCHOR_BOTTOM_RIGHT, new GSize(0, 0));
+            }
+            // Resizes the map's width and height by the given increment
+            function changeMapSize(dx, dy){
+                var mapdiv = map.getContainer();
+                var width = parseInt(mapdiv.style.width);
+                var height = parseInt(mapdiv.style.height);
+                /* Take care that the map's width or height do not get
+                 * a negative value. Unexpected things will happen.
+                 */
+                if (width < 100) {
+                    width = 100;
+                }
+                if (height < 50) {
+                    height = 50;
+                }
+                if (width > 400) {
+                    map.addControl(typecontrol); // Switch map types
+                    typecontrol.visible = true;
+                } else {
+                    map.removeControl(typecontrol);
+                    typecontrol.visible = false;
+                }
+                mapdiv.style.width = (width + dx) + "px";
+                mapdiv.style.height = (height + dy) + "px";
+                map.checkResize();
+            }
+            
+            //]]>
+        </script>
+    </body>
+</html>

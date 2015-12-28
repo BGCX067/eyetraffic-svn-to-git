@@ -1,0 +1,445 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"  xmlns:v="urn:schemas-microsoft-com:vml">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=7" />
+<title>Marker Cats</title>
+<script src="http://maps.google.com/maps?file=api&amp;v=2&amp;key=ABQIAAAAYxpy0HiKBWXiyhVrpVqkshTwsqgIYL1WKUo2NH5PBQbiwgJSFhTsE-QuCFGPqmlghJQOzoJQiiJYnA"
+  type="text/javascript"></script>
+<style type="text/css">
+body {font-family: Verdana, Arial, sans serif; font-size: 11px; margin: 2px;}
+h2 {margin: 0px 40px 0px 40px}
+
+a:hover {text-decoration: underline overline}
+table.main th {background-color:#ccf; height:20px;}
+li {margin-left: -20px;}
+.sidebar-entry {text-decoration:none; border:1px solid silver;}
+a.sidebar-entry {color:#000; text-decoration: none; margin-left:20px}
+a.sidebar-entry:hover {background-color:#eee; text-decoration: none}
+a.sidebar-entry:focus {background-color:#ccf; text-decoration: none}
+.sidebar-cat-header {background-color:#eee; margin:1px; font-weight:bold;}
+.hilight-cat-header {background-color:#ccf;}
+.iw-header {background-color:#eee;font-weight:bold}
+.iw-directions {display: block; margin-top:20px; width:80px}
+#sidebar {width:200px; height:400px; overflow:auto}
+#map {width:480px; height:400px;}
+#novel {width:300px; height:400px; overflow:auto; border:1px solid silver;}
+#adsense {text-align: center}
+</style>
+</head>
+<body onunload="GUnload()">
+<h2>Esa's Google Maps API experiments</h2>
+
+
+<table class="main">
+<tr><th>Results</th><th>Map Kitchen [part 3]</th><th>Marker categories</tr>
+
+<tr>
+<td valign="top"><div id="sidebar"></div></td>
+<td valign="top"><div id="map"></div></td>
+<td valign="top"><div id="novel">
+
+<p>A basic way to filter markers, is dividing them to different categories and equipping the sidebar with checkboxes. We can read the marker data from separate csv text files for each category. Also we can read many categories from a single file that has a category data cell for each marker.</p>
+<ul>
+<li>A new <code>SideBar()</code> class was introduced</li>
+<li><code>var myBar = new SideBar();</code> creates a sidebar</li>
+<li><code>var myCat = new BarCategory();</code> creates a category in sidebar</li>
+<li>You can add entries to either of them by <code>addEntry();</code> method</li>
+</ul>
+The basic steps of the script:
+<ul>
+<li><code>ajaxLoad(url,opts)</code> downloads a csv text file by <code>GDownloadUrl()</code>.</li>
+<li>The file is parsed by <code>.parseCsv()</code> and passed to <code>map.populate(points)</code>.
+<li><code>GMap2.populate();</code> takes points array as parameter. It creates markers and calls <code>createInfoWindow(point)</code>  and <code>SideBar.addEntry(point)</code>.</li>
+<li>If 'cat' or 'iCat' option is specified, <code>populate()</code> will create the categories needed.</li>
+<li>Copy/paste the script to a page with "map" and "sidebar" blocks.</li>
+<li>Include some <abbr title="Comma Separated Values">CSV</abbr> text file in the same directory and ajaxLoad() them in the code</li>
+
+<li id="api-v"></li>
+</ul>
+<a href="http://koti.mbnet.fi/ojalesa/exam/index.html">More experiments</a>
+&nbsp;|&nbsp;
+<a href="http://apitricks.blogspot.com/">Blog</a>
+</div></td>
+
+</tr>
+</table>
+
+<div id="adsense">
+<script type="text/javascript"><!--
+google_ad_client = "pub-3649938975494252";
+/* 728x90, luotu 22.11.2008 */
+google_ad_slot = "7864723809";
+google_ad_width = 728;
+google_ad_height = 90;
+//-->
+</script>
+<script type="text/javascript"
+src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
+</script>
+</div>
+
+<script type="text/javascript">
+
+
+/**
+ * A general helper function for creating html elements. <div> as default element type
+ * @author Esa 2008 
+ * used for infowindows and sidebar
+ */
+function createElem(opt_className, opt_html, opt_tagName) {
+  var tag = opt_tagName||"div";
+  var elem = document.createElement(tag);
+  if (opt_html) elem.innerHTML = opt_html;
+  if (opt_className) elem.className = opt_className;
+  return elem;
+}
+
+
+/**
+ * sidebar with categories
+ * @author Esa 2008
+ */ 
+function SideBar(block_element, opt_options){
+  var opts = opt_options||{};
+  this.division = createElem("sidebar-contents");
+  block_element.appendChild(this.division);
+  this.show =  function(){this.division.style.display = "block"};
+  this.hide =  function(){this.division.style.display = "none"};
+  this.cats = [];
+
+  this.addEntry = function(point,opt_options){
+    var opts = opt_options||{};
+    var iLabel = opts.iLabel||2;
+    var label = createElem("sidebar-entry", point.textArray[iLabel], "a");
+    label.href = "#";
+    label.style.display = "block";
+    label.onclick = function(){GEvent.trigger(point.marker,'click'); return false};//x-browser
+    label.onfocus = function(){GEvent.trigger(point.marker,'click'); return false};
+    this.division.appendChild(label);
+    GEvent.addListener(point.marker,'click',function(){label.focus(); return false});
+  }
+  this.clear = function(){
+    while (this.division.firstChild) {
+      this.division.removeChild(this.division.firstChild);
+    }
+  }
+}
+
+/**
+ * category to a sidebar
+ * @author Esa 2008
+ */ 
+function BarCategory(sideBar, catName, opt_options){
+  var me = this;
+  var opts = opt_options||{};
+  me.division = createElem("sidebar-cat");
+  var cssClasses = "sidebar-cat-header cat-header-"+catName;
+  var cat = createElem(cssClasses);
+  me.pin = createElem("sidebar-cat-image",null,"img");
+  me.pin.src = opts.icon.image;
+  cat.appendChild(me.pin);
+  var check = createElem("sidebar-cat-check",null,"input");
+  me.header = cat;
+  check.type = "checkbox";
+  check.checked = opts.checked||false;
+  cat.appendChild(check);
+  var checkLabel = createElem("sidebar-cat-label",catName,"span");
+  cat.appendChild(checkLabel);
+  me.show =  function(){
+    me.division.style.display = "block";
+    me.pin.style.visibility = "visible";
+  }
+  me.hide =  function(){
+    me.division.style.display = "none";
+    me.pin.style.visibility = "hidden";
+  }
+  me.hilight =  function(){me.header.className = cssClasses +"  hilight-cat-header"};
+  me.lolight =  function(){me.header.className = cssClasses};
+  sideBar.division.appendChild(cat);
+  sideBar.division.appendChild(me.division);
+  sideBar.cats[catName] = me;
+  me.markers = [];
+  me.showMarkers = function(){
+    for(var i=0;i<me.markers.length;i++){
+      me.markers[i].show();
+    }
+  }
+  me.hideMarkers = function(){
+    for(var i=0;i<me.markers.length;i++){
+      me.markers[i].hide();
+      me.markers[i].closeInfoWindow();
+    }
+  }
+  function update(){
+    if(check.checked){
+      me.show();
+      me.showMarkers();
+      me.hilight();
+    }else{
+      me.hide();
+      me.hideMarkers();
+      me.lolight();
+    }
+  };
+  check.onclick = update;
+  me.update = update;
+  me.check = check;
+
+  me.addEntry = function(point,opt_options){
+    var opts = opt_options||{};
+    me.markers.push(point.marker);
+    var iLabel = opts.iLabel||2;
+    var label = createElem("sidebar-entry", point.textArray[iLabel], "a");
+    label.href = "#";
+    label.style.display = "block";
+    label.onclick = function(){GEvent.trigger(point.marker,'click'); return false};//x-browser
+    label.onfocus = function(){GEvent.trigger(point.marker,'click'); return false};
+    me.division.appendChild(label);
+    GEvent.addListener(point.marker,'click',function(){label.focus(); return false});
+  }
+  me.clear = function(){
+    while (me.division.firstChild) {
+      me.division.removeChild(me.division.firstChild);
+    }
+  }
+}
+
+
+
+
+/**
+ * Marker icon
+ */
+function tinyImage(opt_color, opt_preload){
+  var color = opt_color||"red";
+  var src_ = "http://labs.google.com/ridefinder/images/mm_20_"+color+".png";
+  if(opt_preload){
+    var preImage = new Image();
+    preImage.src = src_;
+  }
+  return  src_;
+}  
+function tinyIcon(opt_color){
+  var tiny = new GIcon();
+  tiny.image = tinyImage(opt_color);
+  tiny.shadow = "http://labs.google.com/ridefinder/images/mm_20_shadow.png";
+  tiny.iconSize = new GSize(12, 20);
+  tiny.shadowSize = new GSize(22, 20);
+  tiny.iconAnchor = new GPoint(6, 20);
+  tiny.infoWindowAnchor = new GPoint(5, 1);
+  tiny.imageMap = [4,0,0,4,0,7,3,11,4,19,7,19,8,11,11,7,11,4,7,0];
+  tiny.transparent = "tiny_transparent.png";
+  return tiny;
+}
+//Preload loop
+//Electronics freaks  know the numbering scheme
+var icons = ["black","brown","red","orange","yellow","green","blue","purple","gray","white"];
+for(var color in icons){
+  tinyImage(icons[color], true);
+}
+
+
+/**
+ * GMap2.showBounds() method. Fit bounds to viewport with paddings.
+ * @ author Esa 2008
+ * @ param bounds_ GLatLngBounds()
+ * @ param opt_options Optional options object {top, right, bottom, left, save}
+ */
+GMap2.prototype.showBounds = function(bounds_, opt_options){
+  var opts = opt_options||{};
+  opts.top = opt_options.top*1||0;
+  opts.left = opt_options.left*1||0;
+  opts.bottom = opt_options.bottom*1||0;
+  opts.right = opt_options.right*1||0;
+  opts.save = opt_options.save||true;
+  opts.disableSetCenter = opt_options.disableSetCenter||false;
+  var ty = this.getCurrentMapType();
+  var port = this.getSize();
+  if(!opts.disableSetCenter){
+    var virtualPort = new GSize(port.width - opts.left - opts.right, 
+                            port.height - opts.top - opts.bottom);
+    this.setZoom(ty.getBoundsZoomLevel(bounds_, virtualPort));
+    var xOffs = (opts.left - opts.right)/2;
+    var yOffs = (opts.top - opts.bottom)/2;
+    var bPxCenter = this.fromLatLngToDivPixel(bounds_.getCenter());
+    var newCenter = this.fromDivPixelToLatLng(new GPoint(bPxCenter.x-xOffs, bPxCenter.y-yOffs));
+    this.setCenter(newCenter);
+    if(opts.save)this.savePosition();
+  }
+  var portBounds = new GLatLngBounds();
+  portBounds.extend(this.fromContainerPixelToLatLng(new GPoint(opts.left, port.height-opts.bottom)));
+  portBounds.extend(this.fromContainerPixelToLatLng(new GPoint(port.width-opts.right, opts.top)));
+  return portBounds;
+}
+
+
+/**
+ * Map
+ */
+_mPreferMetric=true;                                 //to make size sure for IE too
+var map = new GMap2(document.getElementById("map"), {size:new GSize(480,400)});
+map.setCenter(new GLatLng( 0,0), 9);
+map.addControl(new GLargeMapControl());
+map.addControl(new GMapTypeControl());
+map.addControl(new GScaleControl());
+map.openInfoWindowHtml(map.getCenter(),"Nice to see you.");
+map.closeInfoWindow(); //preloading infowindow
+document.getElementById("api-v").innerHTML = '2.'+G_API_VERSION;
+
+
+/**
+ * parseCsv()
+ * @return an array of GLatLng() objects
+ * @param opt_options object {lat, lng} integers defining the csv cells of coordinates (default: {lat:1, lng:0})
+ * @author Esa 2008
+ */
+String.prototype.parseCsv = function(opt_options){
+  var results = [];
+  var opts = opt_options||{};
+  var iLat, iLng;
+  isNaN(opts.lat) ? iLat = 1 : iLat = opts.lat;  // defaults 
+  isNaN(opts.lng) ? iLng = 0 : iLng = opts.lng;  // fixed 2009
+  var lines = this.split("\n");
+  for (var i=0; i<lines.length; i++) {
+    var blocks = lines[i].split('"');
+    //finding commas inside quotes. Replace them with '::::'
+    for(var j=0;j<blocks.length;j++){
+      if(j%2){
+        blocks[j]=blocks[j].replace(/,/g,'::::');
+      }
+    }  //@author Esa 2008, keep this note.
+    lines[i] = blocks.join("");
+    var lineArray = lines[i].split(",");
+    var lat = parseFloat(lineArray[iLat]);
+    var lng = parseFloat(lineArray[iLng]);
+    var point = new GLatLng(lat,lng);
+    //after splitting by commas, we put hidden ones back
+    for(var cell in lineArray){
+      lineArray[cell] = lineArray[cell].replace(/::::/g,',');
+    } //corrupted line step-over
+    if(!isNaN(lat+lng)){
+      point.textArray = lineArray;
+      results.push(point);
+    }
+  }
+  return results;
+}
+
+
+
+
+/**
+ * Create the markers, with  infowindow.
+ * Create sidebar categories and entries.
+ */
+
+var bounds = new GLatLngBounds();
+
+GMap2.prototype.populate = function(points, options){
+  var opts = options||{};
+  var noCat = true;
+  if(opts.cat||opts.iCat) noCat = false;
+  var catName = opts.cat||"";
+  var bar = opts.sidebar;
+  var myCat;
+  var newCats = [];
+  for (var i=0; i < points.length; i++) {
+    if(opts.iCat){ // category from file contents
+      catName = points[i].textArray[opts.iCat];
+    }
+    var theIcon = opts.icon||CAT_ICONS[catName]||CAT_ICONS["DEFAULT_ICON"];
+    if(!bar.cats[catName]&&!noCat){ // create a category if not found
+      myCat = new BarCategory(bar, catName, {icon:theIcon});
+      newCats.push(myCat);
+    }
+    var iLabel = opts.iLabel||2;
+    var label = points[i].textArray[iLabel];
+    points[i].marker = new GMarker(points[i],{title:label, icon:theIcon});
+    this.addOverlay(points[i].marker);
+    bounds.extend(points[i]); // this must be considered
+    createInfoWindow(points[i],opts);
+    if(noCat){
+      bar.addEntry(points[i],opts);
+    }else{
+      myCat.addEntry(points[i],opts);
+    }
+  }
+  myCat.check.checked = opts.checked||false;
+  myCat.update();
+  for(var i=0;i<newCats.length;i++){
+    newCats[i].check.checked = opts.checked||false;
+    newCats[i].update();
+  }
+  var paddings = {top:30, right:10, bottom:10, left:50};
+  this.showBounds(bounds,paddings); 
+}
+
+
+
+/**
+ * create infowindow
+ */
+function createInfoWindow(point, opt_options){
+  var opts = opt_options||{};
+  var start = opts.iLabel||2;
+  var iwNode = createElem("info-window");
+  var iwRows = [];
+  for(var i=start; i<point.textArray.length; i++){
+  var row = createElem("iw-cell-"+i, point.textArray[i]);
+  iwRows.push(row);
+  iwNode.appendChild(row);
+  }
+  var directions = createElem("iw-directions", "Directions", "a");
+  directions.href = "http://maps.google.com/maps?saddr=&daddr=" + point.toUrlValue();
+  directions.target = "_blank";
+  iwNode.appendChild(directions);      // directions added 2009
+  iwRows[0].className += " iw-header";
+  point.marker.bindInfoWindow(iwNode,{maxWidth:300});
+}
+
+
+
+
+/**
+ * This function triggers the downloading and parsing of a selected text file
+ * marker, sidebar and infowindow data is extracted from the file
+ */
+
+  
+var myBar = new SideBar(document.getElementById("sidebar"));
+
+function ajaxLoad(textFile,opt_options){
+  var opts = opt_options||{};
+  opts.sidebar = myBar;
+  var process = function(material){
+    var entries = material.parseCsv(opts);  // fixed 2009
+    map.populate(entries, opts);
+  }
+  GDownloadUrl(textFile, process);
+}
+
+
+
+var CAT_ICONS = [];
+CAT_ICONS["DEFAULT_ICON"] = tinyIcon("green");
+CAT_ICONS["Introduction"] = tinyIcon("red");
+CAT_ICONS["Code"] = tinyIcon("green");
+CAT_ICONS["Craters"] = tinyIcon("gray");
+CAT_ICONS["Airports"] = tinyIcon("blue");
+CAT_ICONS["McDonald's"] = tinyIcon("yellow");
+CAT_ICONS["Towns"] = tinyIcon("purple");
+
+
+window.onload = function(){
+  ajaxLoad("multicat.txt",{iCat:2, checked:true, iLabel:3});
+  ajaxLoad("fincraters.txt",{cat:"Craters"});
+  ajaxLoad("fairports.htm",{cat:"Airports"});
+  ajaxLoad("mcdonalds.txt",{cat:"McDonald's"});
+  ajaxLoad("finlandtowns.txt",{cat:"Towns"});
+}
+
+</script>
+</body>
+</html>

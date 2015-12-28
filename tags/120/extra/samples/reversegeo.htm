@@ -1,0 +1,237 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml">
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
+  <title>Reverse geocoder</title>
+
+  <style type="text/css">
+    body{font-family: Arial; font-size: small; background-color: #ccf;}
+    #outline {margin:20px; float:left; -moz-outline-radius:20px;  -moz-outline-style:solid;
+      -moz-outline-color:#9FB6CD; -moz-outline-width:10px;}
+    #map{width:512px; height:440px; float:left;}
+    #head{text-align:left; margin-left:20px; font-size:150%;}
+    #novel{width:400px; margin:20px;float:right;}
+    #AdSense{margin:20px;}
+    a:hover {color: red; text-decoration: underline overline;}
+    td{vertical-align:top;}
+    .pushpin{width:20px; height:34px; border:none;}
+    .small{color:#666; font-size:80%;}
+    .geocode {}
+  </style>
+
+  <script src="http://maps.google.com/maps?file=api&v=2&key=ABQIAAAAYxpy0HiKBWXiyhVrpVqkshTzRM_GTxWOqTaXXRScn8KwUCiJWhT96ZS2MOLTq-SEmmJL1_cNrib9tA" type="text/javascript">
+  </script>
+
+</head>
+<body onunload="GUnload()" >
+
+<table>
+  <tr>
+    <td>
+      <h3 id="head"> Esa's Google Maps API experiments.</h3>
+    </td>
+    <td>
+
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <div id="outline">
+      <table><tr><td> 
+        Geocode:
+        </td><td>
+        <form class ="geocode" action="#" onsubmit="geocode(this.haku.value, null); return false">
+          <input type="text" size="30" id="haku" name="haku" title="Placename or address"/>
+          <input type="submit" id="hae" value=" >> " title="Set zoom first"/>
+        </form>
+        </td><td>
+         or click marker:
+         </td><td>
+        <a class="marker" href="javascript:follow(0)">
+          <img src="http://maps.google.com/mapfiles/marker.png" alt="" title="click me" 
+               class="pushpin"/>
+        </a>
+        </td></tr></table>
+        <div id="map">
+          <noscript>You should turn on JavaScript</noscript>
+        </div>
+      </div>
+    </td>
+    <td rowspan="2">
+      <div id="novel">
+        <h4>Forward/reverse geocoding</h4>
+        <p>Make an address search or</p>
+        <p>Click a marker above map and move mouse on map.</p>
+        <p>Markers are draggable.</p>
+		<p>Reverse geocoding is performed at 'dragend'.</p>
+        <p>[Copy to memo area] of info window makes csv format.</p>
+		<p>Delete markers by dragging them outside map.</p>
+
+        <p><span id="api-version"></span></p>
+        <p><a href="http://koti.mbnet.fi/ojalesa/exam/index.html">More experiments</a></p> 
+      </div>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <div id="AdSense">
+        <script type="text/javascript">
+          google_ad_client = "pub-3649938975494252"; 
+          google_ad_width = 468;
+          google_ad_height = 60;
+          google_ad_format = "468x60_as";
+          google_ad_type = "text_image";
+          google_ad_channel ="2676021345";
+          google_color_border = "CCCCFF";
+          google_color_bg = "CCCCFF";
+          google_color_link = "0000CC";
+          google_color_url = "008000";
+          google_color_text = "000000";
+        </script>
+        <script type="text/javascript"
+                src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
+        </script>
+      </div>
+    </td>
+  </tr>
+</table>
+<textarea id="memo" style="position: absolute; top:600px; left:5px" 
+cols="70" rows="30" wrap="off" title="Copy and edit your material here."></textarea>
+
+
+<script type="text/javascript">
+
+/**
+ * DOM operations
+ * 'Map coming...' visible only with JavaScript on.
+ */
+document.getElementById("map").innerHTML = "Map coming...";
+document.getElementById("api-version").innerHTML = "api v=2."+G_API_VERSION;
+if (!GBrowserIsCompatible()) {
+  alert('Sorry. Your browser is not Google Maps compatible.');
+}
+
+/**
+ * map
+ */
+_mPreferMetric = true;
+var map = new GMap2(document.getElementById("map"));
+var start = new GLatLng(60.213,24.88);
+map.setCenter(start, 14);
+map.addControl(new GLargeMapControl());
+map.addControl(new GMapTypeControl(1));
+map.addControl(new GScaleControl());
+map.openInfoWindowHtml(map.getCenter(), "Nice to see you.");
+map.closeInfoWindow(); //preload iw
+
+
+/**
+ * reverse/forward gecoder
+ * sets marker LatLng
+ */
+var markers = [];
+var geo = new GClientGeocoder();
+function geocode(query, pin_){
+  geo.getLocations(query, function(addresses){
+    if(addresses.Status.code != 200){
+      alert("D'oh!\n " + query);
+    }else{
+      marker = pin_||createMarker();
+      var result = addresses.Placemark[0];
+      marker.howMany = addresses.Placemark.length;
+      marker.response = result.address;
+      var details = result.AddressDetails||{};
+      marker.accuracy = details.Accuracy||0;
+      var lat = result.Point.coordinates[1];
+      var lng = result.Point.coordinates[0];
+      var responsePoint = new GLatLng(lat, lng);
+      marker.setLatLng(responsePoint);
+      if(marker.poly) map.removeOverlay(marker.poly);
+      marker.poly = new GPolyline([query, responsePoint],"#ff0000",2,1);
+      map.addOverlay(marker.poly);
+      marker.index = markers.length;
+      markers.push(marker);
+      if(!pin_){
+        map.setCenter(responsePoint);
+        map.setZoom(marker.accuracy*2 + 3);
+      }
+      if(result.address) doInfo(marker);
+    }
+  });
+}
+
+
+/**
+ * creates and opens an info window
+ * @param GMarker
+ */
+function doInfo(marker_){
+  var pin = marker_;
+  var iwContents = pin.response.replace(/,/g, ",<br/>");
+  iwContents += "<div class='small'>" + pin.getLatLng().toUrlValue();
+  iwContents += "<br/>Accuracy: " + pin.accuracy;
+  if (pin.howMany>1)iwContents += "<br/>" + pin.howMany;
+  iwContents += "</div>";
+  iwContents += "<a href='javascript:memo(markers["+pin.index+"])'>Copy to memo area</a>";
+  pin.bindInfoWindowHtml(iwContents);
+  map.openInfoWindowHtml(pin.getLatLng(), iwContents);
+}
+
+var memoarea = document.getElementById("memo");
+memoarea.value = "";
+function memo(marker_){
+  var pin = marker_;
+  var lat = pin.getLatLng().lat().toFixed(6);
+  var lng = pin.getLatLng().lng().toFixed(6);
+  var html = pin.response;
+  memoarea.value += lng + ", " + lat + ", " + html + "\n";
+}
+
+
+/**
+ * marker with follow() function
+ * @author: Esa 2008
+ */
+var marker;
+
+function createMarker(){
+  marker = new GMarker(map.getCenter(),{draggable:true, autoPan:false});
+  map.addOverlay(marker);
+  
+  GEvent.addListener(marker, 'dragend', function(markerPoint){
+    if(!map.getBounds().containsLatLng(markerPoint)){
+      map.removeOverlay(this);
+      map.removeOverlay(this.poly);
+    }else{
+    geocode(this.getLatLng(),this);
+    }
+  });
+  return marker
+}
+
+function follow(imageInd){
+  var dog = true;
+  var noMore = false;
+
+  var mouseMove = GEvent.addListener(map, 'mousemove', function(cursorPoint){
+    if(!noMore){
+      marker = createMarker();
+      noMore = true;
+    }
+    if(dog){
+      marker.setLatLng(cursorPoint);
+    }
+  });
+  var mapClick = GEvent.addListener(map, 'click', function(){
+    dog = false;
+    geocode(marker.getLatLng(),marker);
+    // 'mousemove' event listener is deleted for saving resources
+    GEvent.removeListener(mouseMove);
+    GEvent.removeListener(mapClick);
+  });
+}
+
+
+</script>
+</body>
+</html>

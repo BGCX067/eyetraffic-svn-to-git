@@ -1,0 +1,11 @@
+{
+  "extension_name": {
+    "message": "Eye Traffic - Lux traffic info"
+  },
+  "extension_description": {
+    "message": "Traffic info on Luxemburg"
+  },
+  "browser_action_tooltip_default": {
+    "message": "Eye Traffic - Lux traffic info"
+  } 
+}

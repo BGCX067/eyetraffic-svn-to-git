@@ -1,0 +1,164 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"  xmlns:v="urn:schemas-microsoft-com:vml">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+<title>Draggable Directions</title>
+<script src="http://maps.google.com/maps?file=api&amp;v=2&amp;key=ABQIAAAAYxpy0HiKBWXiyhVrpVqkshTwsqgIYL1WKUo2NH5PBQbiwgJSFhTsE-QuCFGPqmlghJQOzoJQiiJYnA"
+  type="text/javascript"></script>
+<style type="text/css">
+body {font-family: Verdana, Arial, sans serif; font-size: 11px; margin: 2px;}
+table.directions th {background-color:#EEEEEE;}
+img {color: #000000;}
+</style>
+<script type="text/javascript">
+
+var map;
+var gdir;
+
+function initialize() {
+  if (GBrowserIsCompatible()) {      
+    map = new GMap2(document.getElementById("map_canvas"));
+    gdir = new GDirections(map, document.getElementById("directions"));
+    GEvent.addListener(gdir, "error", handleErrors);
+    GEvent.addListener(gdir, "addoverlay", onGDirectionsAddOverlay); // Triggers marker swap, Esa
+    map.setCenter(new GLatLng(0,0),0);	// inital setCenter()  added by Esa.
+    setDirections("San Francisco", "Mountain View", "en_US");
+    // api version display added by Esa
+    document.getElementById("api-v").innerHTML = '2.'+G_API_VERSION;
+  }
+}
+
+function setDirections(fromAddress, toAddress, locale) {
+  gdir.load("from: " + fromAddress + " to: " + toAddress,
+  { "locale": locale , "getSteps":true});
+}
+
+function handleErrors(){
+  if (gdir.getStatus().code == G_GEO_UNKNOWN_ADDRESS)
+    alert("No corresponding geographic location could be found for one of the specified addresses. This may be due to the fact that the address is relatively new, or it may be incorrect.\nError code: " + gdir.getStatus().code);
+  else if (gdir.getStatus().code == G_GEO_SERVER_ERROR)
+    alert("A geocoding or directions request could not be successfully processed, yet the exact reason for the failure is not known.\n Error code: " + gdir.getStatus().code);
+  else if (gdir.getStatus().code == G_GEO_MISSING_QUERY)
+    alert("The HTTP q parameter was either missing or had no value. For geocoder requests, this means that an empty address was specified as input. For directions requests, this means that no query was specified in the input.\n Error code: " + gdir.getStatus().code);
+  else if (gdir.getStatus().code == G_GEO_BAD_KEY)
+    alert("The given key is either invalid or does not match the domain for which it was given. \n Error code: " + gdir.getStatus().code);
+  else if (gdir.getStatus().code == G_GEO_BAD_REQUEST)
+    alert("A directions request could not be successfully parsed.\n Error code: " + gdir.getStatus().code);
+  else alert("An unknown error occurred.");
+}
+  
+///////////////////////////////////////////////////////////////////////
+
+/**
+* The add-on code for draggable markers
+* @author Esa 2008
+*/
+var newMarkers = [];
+var latLngs = [];
+var icons = [];
+
+// Note the 'addoverlay' GEvent listener inside initialize() function of the original code (above).
+// 'load' event cannot be used
+
+function onGDirectionsAddOverlay(){ 
+  // Remove the draggable markers from previous function call.
+  for (var i=0; i<newMarkers.length; i++){
+    map.removeOverlay(newMarkers[i]);
+  }
+
+  // Loop through the markers and create draggable copies
+  for (var i=0; i<=gdir.getNumRoutes(); i++){
+    var originalMarker = gdir.getMarker(i);
+    latLngs[i] = originalMarker.getLatLng();
+    icons[i] = originalMarker.getIcon();
+    newMarkers[i] = new GMarker(latLngs[i],{icon:icons[i], draggable:true, title:'Draggable'});
+    map.addOverlay(newMarkers[i]);
+
+    // Get the new waypoints from the newMarkers array and call loadFromWaypoints by dragend
+    GEvent.addListener(newMarkers[i], "dragend", function(){
+      var points = [];
+      for (var i=0; i<newMarkers.length; i++){
+        points[i]= newMarkers[i].getLatLng();
+      }
+      gdir.loadFromWaypoints(points);
+    });
+
+    //Bind 'click' event to original markers 'click' event
+    copyClick(newMarkers[i],originalMarker);
+
+    // Now we can remove the original marker safely
+    map.removeOverlay(originalMarker);
+  }
+
+  function copyClick(newMarker,oldMarker){
+    GEvent.addListener(newMarker, 'click', function(){
+      GEvent.trigger(oldMarker,'click');
+    });
+  }
+}
+
+</script>
+
+
+</head>
+<body onload="initialize()" onunload="GUnload()">
+
+<h2>Maps API Directions Illustrated</h2>
+<form action="#" onsubmit="setDirections(this.from.value, this.to.value, this.locale.value); return false">
+
+<table>
+
+<tr><th align="right">From:&nbsp;</th>
+
+<td><input type="text" size="25" id="fromAddress" name="from"
+ value="San Francisco"/></td>
+<th align="right">&nbsp;&nbsp;To:&nbsp;</th>
+<td align="right"><input type="text" size="25" id="toAddress" name="to"
+ value="Mountain View" /></td></tr>
+
+<tr><th>Language:&nbsp;</th>
+<td colspan="3"><select id="locale" name="locale">
+<option value="en" selected>English</option>
+<option value="fr">French</option>
+<option value="de">German</option>
+<option value="ja">Japanese</option>
+<option value="es">Spanish</option>
+<option value="fi">Finnish</option>
+</select>
+
+<input name="submit" type="submit" value="Get Directions!" />
+
+</td></tr>
+</table>
+
+
+</form>
+
+<br/>
+<table class="directions">
+<tr><th>Formatted Directions</th><th>Map</th><th>Draggable addOn by Esa</tr>
+
+<tr>
+<td valign="top"><div id="directions" style="width: 275px"></div></td>
+<td valign="top"><div id="map_canvas" style="width: 310px; height: 400px"></div></td>
+<td valign="top"><div id="novel" style="width: 310px; height: 400px; overflow: auto">
+
+GDirection markers are made draggable by the following way:
+<ul>
+<li>New draggable markers are created and added on top of the original ones</li>
+<li>Their icons are copied from the original ones</li>
+<li>Their 'dragend' GEvent triggers loadFromWaypoints() directions call</li>
+<li>Original markers 'click' events are bound to new markers</li>
+<li>Original markers are removed</li>
+<li>This process can be done only when 'addoverlay' event is triggered</li>
+<li id="api-v"></li>
+</ul>
+<a href="http://koti.mbnet.fi/ojalesa/exam/index.html">More experiments</a>
+</div></td>
+
+</tr>
+
+</table> 
+</body>
+</html>

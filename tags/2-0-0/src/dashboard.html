@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html class="fullh">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+        <title>Eye Traffic</title>
+
+        <link type="text/css" href="lib/jqueryui/jquery-ui-1.10.4.custom/css/smoothness/jquery-ui-1.10.4.custom.min.css" rel="stylesheet" />
+        <link type="text/css" href="css/eye.css" rel="stylesheet">
+    </head>
+    <body class="fullh dashboard">
+        <div id="header">
+            <button name="refresh" id="refresh">Refresh</button>
+			<!--
+			<button name="convert" id="convert" class="debug">Convert</button>
+			-->
+			<div id="history" title="History"> </div>
+			<div id="links">
+				<a target="blank" href="maps.html" class="debug"><b>Map</b></a>
+				<a target="blank" href="popup.html" class="debug"><b>Popup</b>&nbsp;</a>
+	            <a target="blank" href="http://www.cita.lu">CITA</a>
+	            &nbsp;<a target="blank" href="http://www.lesfrontaliers.lu/index.php?p=parcours">Les frontaliers</a>
+	            &nbsp;<a target="blank" href="http://auto.rtl.lu/trafic/traficinfo/">RTL</a>
+	            &nbsp;<a target="blank" href="http://www.acl.lu/fr/trafic_news/info_trafic_luxembourg">ACL</a>
+	            &nbsp;<a target="blank" href="http://www.guideroutier.lu/">Guide routier</a>
+	            &nbsp;<a target="blank" href="http://www.driving.lu/index.php?module=auto&action=getListeCamera&idauto=1">driving.lu</a>
+	            &nbsp;<a target="blank" href="http://www.bison-fute.equipement.gouv.fr">Bison futé</a>
+	            &nbsp;<a target="blank" href="http://www.sanef.com/fr/travaux/">SANEF</a>
+				&nbsp;<a target="blank" href="http://routes.tomtom.com/map/?center=49.405663703215%2C5.9357666015328&zoom=8&map=basic/">Tomtom</a>
+				&nbsp;<a target="blank" href="http://www.inforoute57.fr">InfoRoute57</a>
+				&nbsp;<a target="blank" href="http://www.luxtraffic.lu">LuxTraffic</a>
+			</div>
+			<div id="title_flashinfo"><h2>Trafic info</h2></div>
+        </div>
+        <div id="menu">
+        	<a id="_info" href="#linfo" title="Aller aux infos">Info</a>|
+        	<a id="_times" href="#ltimes" title="Aller aux temps">Times</a>|
+        	<a id="_cams" href="#lcams" title="Aller aux caméras">Cams</a>|
+        	<a id="_maps" href="#lmaps" title="Aller aux cartes">Maps</a>|
+        	<a id="_status" href="#" title="Rafraichissement automatique">Auto</a>
+        </div>
+        <div id="main">
+            <div id="ptimes">
+                <a name="ltimes"> </a>
+                <h2>Temps de parcours</h2>
+                <div id="times">
+                    <ul>
+                        <li><a href="#time-FRANCE">France</a></li>
+                        <li><a href="#time-BELGIQUE">Belgique</a></li>
+                        <li><a href="#time-LUX-SUD">Lux Sud</a></li>
+                        <li><a href="#time-LUX-EST">Lux Est</a></li>
+                        <li><a href="#time-LUX-HOL">Hollerich</a></li>
+                    </ul>
+                    <div class="tab-content time" id="time-FRANCE">
+                    </div>
+                    <div class="tab-content time" id="time-BELGIQUE">
+                    </div>
+                    <div class="tab-content time" id="time-LUX-SUD">
+                    </div>
+                    <div class="tab-content time" id="time-LUX-EST">
+                    </div>
+                    <div class="tab-content time" id="time-LUX-HOL">
+                    </div>
+                </div>
+            </div>
+            <div id="alerts">
+                <a name="linfo"> </a>
+                <!--<h2>Trafic info</h2>-->
+                <div class="content">
+                    <div id="flashinfo" title="Alerte LesFrontaliers"> </div>
+                    <div id="alert"> </div>
+                </div>
+            </div>
+            <a name="lcams"> </a>
+            <h2>Caméras</h2>
+            <div class="mtab" id="cams">
+                <ul>
+					<li><a href="#cam-A1" data-id="A1">A1<span class="camdesc">Trèves</span></a></li>
+                    <li><a href="#cam-A3" data-id="A3">A3<span class="camdesc">France</span></a></li>
+                    <li><a href="#cam-A4" data-id="A4">A4<span class="camdesc">Esch</span></a></li>
+                    <li><a href="#cam-A6" data-id="A6">A6<span class="camdesc">Belgique</span></a></li>
+                    <li><a href="#cam-A7" data-id="A7">A7<span class="camdesc">Nord</span></a></li>
+                    <li><a href="#cam-A13" data-id="A13">A13<span class="camdesc">Longwy-Sarrebruck</span></a></li>
+                </ul>
+				<div class="tab-content" id="cam-A1">
+                </div>
+                <div class="tab-content" id="cam-A3">
+                </div>
+                <div class="tab-content" id="cam-A4">
+                </div>
+                <div class="tab-content" id="cam-A6">
+                </div>
+                <div class="tab-content" id="cam-A7">
+                </div>
+                <div class="tab-content" id="cam-A13">
+                </div>
+            </div>
+            <a name="lmaps"> </a>
+            <h2>Cartes</h2>
+            <div class="mtab" id="maps">
+                <ul>
+					<li><a href="#map-cita">CITA</a></li>
+					<li><a href="#map-tomtom">Tomtom</a></li>
+					<li><a href="#map-google">Google</a></li>
+					<li><a href="#map-rtl">RTL</a></li>
+					<li><a href="#map-ir57">fr.InfoRoute57</a></li>
+					<li><a href="#map-bison">fr.BisonFuté</a></li>
+					<li><a href="#map-mobilinfo">be.Mobilinfo</a></li>
+					<li><a href="#map-wallonie">be.Wallonie</a></li>
+					<li><a href="#map-verkehrsinfo">de.Verkehrsinfo</a></li>
+					<li><a href="#map-swr3">de.SWR3</a></li>
+                </ul>
+				<div class="tab-content" id="map-cita"> </div>
+				<div class="tab-content" id="map-tomtom"> </div>
+				<div class="tab-content" id="map-google"><div id="gmap"> </div></div>
+				<div class="tab-content" id="map-rtl"> </div>
+				<div class="tab-content" id="map-ir57"> </div>
+				<div class="tab-content" id="map-bison"> </div>
+				<div class="tab-content" id="map-mobilinfo"> </div>
+				<div class="tab-content" id="map-wallonie"> </div>
+				<div class="tab-content" id="map-verkehrsinfo"> </div>
+				<div class="tab-content" id="map-swr3"> </div>
+				<div id="map-custom" style="display:none;">
+					<div id="wrapper">
+            			<div id="second-header">
+			                <div id="location">
+			                    <span>Address:</span>
+			                    <input type="text" id="addressSource" value="wasserbillig"/><input type="button" value="Go!" onclick="searchMap();"/><a href="#" class="dirlink" onclick="showRoute();">Get Directions</a>
+			                </div>
+			                <div id="route">
+			                    <div id="routeSourceBox">
+			                        <span>Home:</span>
+			                        <input type="text" id="routeA" value="thionville, france"/><a href="#" class="dirlink" onclick="showLocation();">Find Location</a>
+			                    </div>
+			                    <div id="routeDestBox">
+			                        <span>Work:</span>
+			                        <input type="text" id="routeB" value="kirchberg, luxembourg"/><input type="button" value="Go!" onclick="getRoute();"/><a href="#" onclick="clearRoute();">Clear Route</a>
+			                    </div>
+			                </div>
+            			</div>
+            			<div id="main2">
+				            <div id="sidebar" class="left">
+				            	<div id="sidebar_cats">
+				            	</div>
+								<div id="sidebar_route">
+				            	</div>
+				            </div>
+							<div id="center" class="left">
+								<div id="map_canvas"style="width:600px;height:500px;">
+					            </div>
+					            <canvas id="mycanvas" width="1" height="1">
+					            </canvas>
+								<div id="outer_more"> </div>
+							</div>
+							<div id="right" class="left">
+								<div id="catselector">
+									<span>Cameras: <input type="checkbox" id="cat_cams" onclick="selcat(this,'cams');" /></span><br/>
+									<span>Times: <input type="checkbox" id="cat_times" onclick="selcat(this,'times');" /></span> <br/>
+									<span>Current Position: <input type="checkbox" id="cat_position" onclick="selcat(this,'position');" /></span><br/>
+									<span>Route: <input type="checkbox" id="cat_route" onclick="selcat(this,'route');" /></span><br/>
+									<span>Directions: <input type="checkbox" id="cat_directions" onclick="selcat(this,'directions');" /></span><br/>
+							    </div>
+								<textarea id="jmarkers" rows="20" cols="50">
+			            		</textarea>
+							</div>
+						</div>
+		            	<div id="second-footer">
+			                <div id="defloc">
+			                    <a href="#" onclick="resetLocation();">Reset</a>
+			                    <a href="#" onclick="saveLocation();">Save</a>
+			                </div>
+			                <div id="sizeLinks">
+			                    <a href="#" onclick="setSize(0);">Small</a>
+			                    <a href="#" onclick="setSize(1);">Medium</a>
+			                    <a href="#" onclick="setSize(2);">Large</a>
+			                </div>
+			            </div>
+            		</div>
+            	</div>
+            </div>
+		</div>
+        <div id="footer">
+            <textarea class="debug" id="res" cols='60' rows='20'> </textarea>
+        </div>
+		
+		<script type="application/javascript" src="lib/jquery/jquery-2.1.1.min.js"></script>
+        <script type="application/javascript" src="lib/jquery/jquery-migrate-1.2.1.min.js"></script>
+        
+        <script type="text/javascript" src="lib/jqueryui/jquery-ui-1.10.4.custom/js/jquery-ui-1.10.4.custom.min.js"></script>
+
+        <script type="application/javascript" src="lib/mustache.js"></script>
+		<script type="application/javascript" src="lib/moment/moment-with-langs.js"></script>
+		
+		<script type="text/javascript" src="lib/sparklines/jquery.sparkline.min.js"></script>
+		
+		<script type="text/javascript" src="lib/fancyzoom/jquery.fancyzoom.js"></script>
+		
+        <script type="application/javascript" src="config.js"></script>
+		<script type="application/javascript" src="dashboard.js"></script>	
+		
+    </body>
+</html>

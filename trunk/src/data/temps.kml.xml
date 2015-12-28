@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.opengis.net/kml/2.2 http://schemas.opengis.net/kml/2.2.0/ogckml22.xsd http://www.google.com/kml/ext/2.2 http://code.google.com/apis/kml/schema/kml22gx.xsd"
+>
+	<Document id ='PMV'>
+		<name>PMV</name>
+		<Snippet maxLines ='0'></Snippet>
+		<Style id ='IconStyle00'>
+			<IconStyle>
+				<scale>1.125000</scale>
+				<heading>0.0</heading>
+				<Icon>
+					<href>images/kml/pmv.png</href>
+					<refreshInterval>0.0</refreshInterval>
+					<viewRefreshTime>0.0</viewRefreshTime>
+					<viewBoundScale>0.0</viewBoundScale>
+				</Icon>
+			</IconStyle>
+			<LabelStyle>
+				<color>00000000</color>
+				<scale>0.000000</scale>
+			</LabelStyle>
+			<PolyStyle>
+				<color>ff000000</color>
+			</PolyStyle>
+		</Style>
+		<Folder id ='FeatureLayer0'>
+			<name>PMV</name>
+			<Snippet maxLines ='0'></Snippet>
+			<Placemark id ='ID_00000'>
+				<name>Schengen</name>
+				<Snippet maxLines ='0'></Snippet>
+				<description>
+					<![CDATA[
+					<span class='time'>LUX-SUD:	18min</span>
+					<span class='time'>LUX-EST:	22min</span>
+					<span class='time'>BELGIQUE:	29min</span>
+					]]>
+				</description>
+				<styleUrl>#IconStyle00</styleUrl>
+				<Point>
+					<altitudeMode>clampToGround</altitudeMode>
+					<coordinates>6.363120004210724,49.47816817462979</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id ='ID_00001'>
+				<name>Lallange</name>
+				<Snippet maxLines ='0'></Snippet>
+				<description>
+					<![CDATA[
+					<span class='time'>LUX-HOL:	08min</span>
+					<span class='time'>LUX-SUD:	10min</span>
+					<span class='time'>LUX-EST:	14min</span>
+					]]>
+				</description>
+				<styleUrl>#IconStyle00</styleUrl>
+				<Point>
+					<altitudeMode>clampToGround</altitudeMode>
+					<coordinates>5.994852899766804,49.51568530892997</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id ='ID_00002'>
+				<name>LUX-SUD</name>
+				<Snippet maxLines ='0'></Snippet>
+				<description>
+					<![CDATA[
+					<span class='time'>FRANCE:	09min</span>
+					]]>
+				</description>
+				<styleUrl>#IconStyle00</styleUrl>
+				<Point>
+					<altitudeMode>clampToGround</altitudeMode>
+					<coordinates>6.132848894779698,49.58440920851405</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id ='ID_00003'>
+				<name>Senningerberg</name>
+				<Snippet maxLines ='0'></Snippet>
+				<description>
+					<![CDATA[
+					<span class='time'>LUX-SUD:	10min</span>
+					<span class='time'>FRANCE:	17min</span>
+					<span class='time'>BELGIQUE:	20min</span>
+					]]>
+				</description>
+				<styleUrl>#IconStyle00</styleUrl>
+				<Point>
+					<altitudeMode>clampToGround</altitudeMode>
+					<coordinates>6.229099124647832,49.64042576161475</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id ='ID_00004'>
+				<name>Wasserbillig</name>
+				<Snippet maxLines ='0'></Snippet>
+				<description>
+					<![CDATA[
+					<span class='time'>LUX-EST:	15min</span>
+					<span class='time'>LUX-SUD:	22min</span>
+					<span class='time'>FRANCE:	29min</span>
+					]]>
+				</description>
+				<styleUrl>#IconStyle00</styleUrl>
+				<Point>
+					<altitudeMode>clampToGround</altitudeMode>
+					<coordinates>6.495353031423315,49.73055703951915</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id ='ID_00005'>
+				<name>Belgique</name>
+				<Snippet maxLines ='0'></Snippet>
+				<description>
+					<![CDATA[
+					<span class='time'>LUX-SUD:	13min</span>
+					<span class='time'>LUX-EST:	17min</span>
+					<span class='time'>FRANCE:	19min</span>
+					]]>
+				</description>
+				<styleUrl>#IconStyle00</styleUrl>
+				<Point>
+					<altitudeMode>clampToGround</altitudeMode>
+					<coordinates>5.915297619395274,49.6374486829106</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id ='ID_00006'>
+				<name>Bridel</name>
+				<Snippet maxLines ='0'></Snippet>
+				<description>
+					<![CDATA[
+					<span class='time'>BELGIQUE:	07min</span>
+					]]>
+				</description>
+				<styleUrl>#IconStyle00</styleUrl>
+				<Point>
+					<altitudeMode>clampToGround</altitudeMode>
+					<coordinates>6.076097932953247,49.62731289738246</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id ='ID_00007'>
+				<name>France</name>
+				<Snippet maxLines ='0'></Snippet>
+				<description>
+					<![CDATA[
+					<span class='time'>LUX-SUD:	08min</span>
+					<span class='time'>LUX-EST:	12min</span>
+					<span class='time'>BELGIQUE:	19min</span>
+					]]>
+				</description>
+				<styleUrl>#IconStyle00</styleUrl>
+				<Point>
+					<altitudeMode>clampToGround</altitudeMode>
+					<coordinates>6.117272864223105,49.49295495811524</coordinates>
+				</Point>
+			</Placemark>
+			<Placemark id ='ID_00008'>
+				<name>Merl</name>
+				<Snippet maxLines ='0'></Snippet>
+				<description>
+					<![CDATA[
+					]]>
+				</description>
+				<styleUrl>#IconStyle00</styleUrl>
+				<Point>
+					<altitudeMode>clampToGround</altitudeMode>
+					<coordinates>6.10433301067062,49.60039454950569</coordinates>
+				</Point>
+			</Placemark>
+		</Folder>
+	</Document>
+</kml>

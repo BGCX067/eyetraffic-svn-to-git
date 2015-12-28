@@ -1,0 +1,501 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"> 
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml"> 
+<head> 
+	<!-- http://www.marsrutai.info/directions.htm -->
+	<meta http-equiv="content-type" content="text/html; charset=UTF-8"/> 
+	<title>Draggable driving directions demo</title> 
+	<meta name="keywords" content="driving, directions, routes, drag, map, GMaps API, Google Maps" /> 
+	<meta name="description" content="Drag to change route on Google Maps" /> 
+	<style type="text/css"> 
+		body{ height:100% }
+ 
+		div#mapDiv {
+			display:block;
+			position:absolute;
+			top:0;
+			left:0;
+			width:100%;
+			height:100%;
+		}
+		
+		div#button {
+			display:block;
+			background: white;
+			border: black 1px solid;
+			
+			cursor: pointer;
+			text-align: center;
+			
+			position:absolute;
+			top:10px;
+			left:100px;
+		}
+		
+		div#clearRoute {
+			width:100px;
+			color:black;
+			font-family:Arial,sans-serif;
+			font-size: 12px;
+			border-style: solid; 
+			border-width: 1px; 
+			border-color: white rgb(176, 176, 176) rgb(176, 176, 176) white; 
+		}
+		
+		div#distance {
+			font-family:Arial,sans-serif;
+			font-size: 12px;
+			
+			display:block;
+			background: white;
+			border: black 1px solid;
+			padding: 3px;
+			
+			position:absolute;
+			top:10px;
+			left:208px;
+		}
+		</style> 
+ 
+	<script src="http://maps.google.com/maps?file=api&amp;v=2.x&amp;key=ABQIAAAA1ScCs8FhCgcezEz08rROsxQju4QTY177ZUqtiHd-QtBfjDmWeBTlPLYbFmcJsp5WVjYOKK7pxhVUGA" type="text/javascript"></script> 
+	<script type="text/javascript" src="http://www.google.com/jsapi?key=ABQIAAAA1ScCs8FhCgcezEz08rROsxQju4QTY177ZUqtiHd-QtBfjDmWeBTlPLYbFmcJsp5WVjYOKK7pxhVUGA"></script> 
+</head> 
+ 
+<body onunload="GUnload()"> 
+ 
+<div id="mapDiv"></div> 
+<div id="button"> 
+	<div id="clearRoute" onclick="InitRoute([]);">Clear route</div> 
+</div> 
+<div id="distance">Click the map for start and next waypoints.<br>Drag the waypoints or polyline, and<br>directions will change while you are dragging.</div> 
+</body> 
+ 
+<script type="text/javascript"> 
+ 
+var map, GDir1, GDir2, normalProj, waypoints=[], gpolys=[], routeNodes=[], init_route=[], myNode, markerDragged, isDragged, lastIndex, prevIndex;
+ 
+function InitRoute(route_points) {
+	if (!map) {
+		return;
+	}
+ 
+	init_route = route_points; //global array, so GDir1.load can construct initial route
+	 
+	var panel = document.getElementById('distance');
+	if (panel) {
+		panel.innerHTML = "Click the map for start and next waypoints.<br>Drag the waypoints or polyline, and<br>directions will change while you are dragging.";
+	}
+	
+	// clear existing lines and nodes
+	while (gpolys.length > 0) {
+		map.removeOverlay(gpolys.pop());
+	}
+	while (waypoints.length > 0) {
+		map.removeOverlay(waypoints.pop());
+	}
+ 
+	routeNodes=[]; 
+	lastIndex=0;
+	prevIndex=0;
+	
+	if (init_route.length > 0) {
+		var point = init_route.pop();
+		GDir1.loadFromWaypoints([point, point], {getPolyline:true}); //put the first point, and GDir1.load will continue to add points from init_route array
+	}
+}
+ 
+if (!GBrowserIsCompatible()) {
+    alert("Sorry, the Google Maps API is not compatible with this browser");
+}
+else {
+	// Display the map with some controls and set the initial location 
+	
+	var opts = {
+		draggableCursor:"crosshair",
+		googleBarOptions: {
+			style: 'new',
+			adsOptions: {
+				client: "partner-pub-7126542912679689",  
+				channel: 9910959809
+			}
+		}
+	}
+	
+	map = new GMap2(document.getElementById("mapDiv"), opts);
+ 
+	if (google.loader.ClientLocation) {
+		map.setCenter(new GLatLng(google.loader.ClientLocation.latitude,google.loader.ClientLocation.longitude), 12);	
+	} 
+	else {
+		map.setCenter(new GLatLng(49.7806,12.12715), 5);;
+	}
+ 
+	map.setUIToDefault();
+	map.enableGoogleBar();
+ 
+	map.addMapType(G_SATELLITE_3D_MAP);
+ 
+	adsManager = new GAdsManager(map, "ca-pub-7126542912679689", {maxAdsOnMap: 2, style: G_ADSMANAGER_STYLE_ADUNIT, channel: 9910959809});
+	adsManager.enable();
+	
+	normalProj = G_NORMAL_MAP.getProjection(); // for conversion between LatLng and screen pixels
+	
+	GDir1 = new GDirections(); // for extending route to additional point
+	GDir2 = new GDirections(); // for recalculating of route when dragging line
+	
+	//GEvent.addListener(GDir1, "error", function() {	alert("Directions Failed: "+GDir1.getStatus().code); });
+	//GEvent.addListener(GDir2, "error", function() {	alert("Directions Failed: "+GDir2.getStatus().code); });
+			
+	GEvent.addListener(map, 'mousemove', getProximity); // for detecting if mouse is above displayed route
+	
+	GEvent.addListener(map, "zoomend", function() {
+		routeNodes = []; // clear cached coordinates in pixels of displayed route vertexes, the coordinates have to be recalculated on new zoom level
+	});
+	
+	GEvent.addListener(map, "click", function(overlay, point) {
+		if (point) {
+			if (waypoints.length == 0) { // no waypoints exist yet - map was clicked for start of the route
+				GDir1.loadFromWaypoints([point.toUrlValue(6), point.toUrlValue(6)], {getPolyline:true}); // get directions from that point to itself to snap it to street
+			} 
+			else { // map was clicked for additional waypoint
+				GDir1.loadFromWaypoints([waypoints[waypoints.length-1].getPoint(), point.toUrlValue(6)], {getPolyline:true}); //get directions from last waypoint to clicked point
+			}
+		}			
+	});
+ 
+	iconNode = new GIcon();	iconNode.image = 'node.gif';
+	iconNode.shadow = ''; iconNode.iconSize = new GSize(10,10); iconNode.shadowSize = new GSize(0,0);
+	iconNode.iconAnchor = new GPoint(5,5); iconNode.infoWindowAnchor = new GPoint(5,5);
+	iconNode.dragCrossImage = 'empty.gif'; // undocumented String: indicates an image to be used as the drag cross. If you set it to the null string, you get the default drag_cross_67_16.png image.
+	iconNode.dragCrossSize = GSize(1, 1); //undocumented GSize(): indicates the size of the drag cross. 
+	iconNode.maxHeight = 1; //undocumented integer: The maximum difference in height between the marker anchor and the drag cross anchor during dragging. Setting the maxHeight to zero causes it to use the default 13.
+	
+	// create marker for displaying and dragging when mouse is over displayed route
+	myNode = new GMarker(map.getCenter(), {icon:iconNode, draggable:true, bouncy:false, zIndexProcess:function(marker,b) {return 1;}});
+	map.addOverlay(myNode);
+	myNode.show(); // sometimes .hide() does not work without .show() at first ???
+	myNode.hide(); // hide this marker initially
+	
+	GEvent.addListener(myNode, "drag", function() { // mouse was over displayed route and user drags the displayed marker
+		myNode.show();
+		
+		if (isDragged == 2) { // already waiting for GDir2.load to complete - so just remember that marker was dragged again
+			markerDragged = myNode; // remember which marker was dragged
+			return;
+		}
+		
+		if (myNode.MyIndex < waypoints.length) {
+			isDragged = 2; // tag that GDir2.load is started
+			markerDragged = false;
+			
+			lastIndex = myNode.MyIndex;	
+			prevIndex = -1;
+			// recalculate route between waypoints before and after myNode on the displayed line
+			GDir2.loadFromWaypoints([waypoints[lastIndex].getPoint(), myNode.getPoint().toUrlValue(6), waypoints[lastIndex + 1].getPoint()], {getPolyline:true});
+		}
+	});
+	
+	GEvent.addListener(myNode, "dragend", function() { // when user finished dragging the line, create new waypoint with permanent marker at the location
+		var point = myNode.getPoint();
+		var marker = new GMarker(point, {icon:iconNode, draggable:true, dragCrossMove:false, bouncy:false, zIndexProcess:function(marker,b) {return 1;}});
+		waypoints.splice(myNode.MyIndex + 1, 0, marker); //insert new waypoint into waypoints array
+		
+		for (var i = myNode.MyIndex; i < waypoints.length; i++) // reindex next waypoints
+			waypoints[i].MyIndex = i;
+		
+		var dummy = new GPolyline([point]); // insert empty segment into route segments array - GDir2.load will replace it with new route segment
+		map.addOverlay(dummy);
+		gpolys.splice(myNode.MyIndex + 1, 0, dummy); 
+		
+		// add event listeners for marker of new waypoint - so route will be recalculated when user drags waypoint
+		GEvent.addListener(marker, "dragstart", function() { isDragged = 1; myNode.hide(); });
+		GEvent.addListener(marker, "dragend", function() { isDragged = 0; } );
+		GEvent.addListener(marker, "drag", dragMarker);
+		
+		map.addOverlay(marker);
+		
+		if (myNode.MyIndex < waypoints.length) {
+			lastIndex = myNode.MyIndex + 1; prevIndex = lastIndex - 1;
+			// recalculate route between previous and next waypoints going through new inserted waypoint
+			GDir2.loadFromWaypoints([waypoints[lastIndex - 1].getPoint(),point.toUrlValue(6), waypoints[lastIndex + 1].getPoint()], {getPolyline:true});
+		}
+	});		
+			
+	GEvent.addListener(GDir1, "load", function() { 
+		var gp = GDir1.getPolyline();
+		var point = gp.getVertex(gp.getVertexCount() - 1); // snap to last vertex in the polyline
+		var marker = new GMarker(point, {icon:iconNode, draggable:true, dragCrossMove:false, bouncy:false, zIndexProcess:function(marker,b) {return 1;}});
+		
+		if (waypoints.length == 0) {	
+			marker.title = GDir1.getRoute(0).getStartGeocode().address;
+		}
+		else {
+			waypoints[waypoints.length-1].title = GDir1.getRoute(0).getStartGeocode().address;
+			marker.title = GDir1.getRoute(0).getEndGeocode().address
+		}
+		
+		GEvent.addListener(marker, "dragstart", function() { isDragged = 1; myNode.hide(); });
+		GEvent.addListener(marker, "drag", dragMarker); 
+		GEvent.addListener(marker, "dragend", function() { isDragged = 0; }); 
+		
+		marker.MyIndex = waypoints.length;
+		waypoints.push(marker);
+		map.addOverlay(marker);
+				
+		if (waypoints.length > 1) { // if this was not the first waypoint - display the route to this waypoint
+			map.addOverlay(gp);
+			gpolys.push(gp);
+			
+			routeNodes = [];
+			getProximity();
+		}
+	
+		if (init_route.length>0) {
+			GDir1.loadFromWaypoints([marker.getPoint(), init_route.pop()], {getPolyline:true});
+		}
+		else {
+			StoreToURL(waypoints);
+		}
+	});
+ 
+	GEvent.addListener(GDir2, "load", function() {
+		var gp = GDir2.getPolyline();
+		
+		map.removeOverlay(gpolys[lastIndex]);
+						
+		if (prevIndex >= 0) { // not the last waypoint was dragged
+			map.removeOverlay(gpolys[lastIndex-1]);
+ 
+			var minD, minI, points=[];
+			var p0 = waypoints[lastIndex].getPoint();
+					
+			for (var i = 0; i < gp.getVertexCount(); i++) { // search closest vertex to dragged waypoint for splitting received route at it into two routes between waypoints
+				var p = gp.getVertex(i);
+				points.push(p);
+			
+				var d = p0.distanceFrom(p);
+			
+				if (i == 0 || minD > d) {
+					minD = d;
+					minI = i;
+				}	
+			}
+ 
+			gpolys[lastIndex - 1] = new GPolyline(points.slice(0, minI + 1)); //+1,  because slice extracts up to, but not including, the 'end' element
+			gpolys[lastIndex] = new GPolyline(points.slice(minI, points.length));
+			
+			map.addOverlay(gpolys[lastIndex - 1]);
+			
+			waypoints[lastIndex-1].title = GDir2.getRoute(0).getStartGeocode().address;
+			waypoints[lastIndex].title = GDir2.getRoute(0).getEndGeocode().address;
+			waypoints[lastIndex+1].title = GDir2.getRoute(1).getEndGeocode().address;
+		}
+		else { // last waypoint was dragged
+			gpolys[lastIndex] = gp;
+			waypoints[lastIndex].title = GDir2.getRoute(0).getStartGeocode().address;
+			waypoints[lastIndex+1].title = GDir2.getRoute(0).getEndGeocode().address;
+		}
+		map.addOverlay(gpolys[lastIndex]);
+		
+		routeNodes = [];
+		getProximity();
+		
+		isDragged = 0; // tag that there is no dragged waypoints or waiting for GDir to complete 
+		StoreToURL(waypoints);
+		
+		if (markerDragged) { // marker was dragged again until GDir2 was loaded
+			isDragged = 1; // tag that there is dragged waypoint
+			setTimeout(function() {GEvent.trigger(markerDragged, 'drag');}, 200); // trigger recalculation of route
+		}
+	
+	});
+	
+	if (window.location.hash != "") { //parse URL for initial route
+		var points = window.location.hash.substring(1).split(",");
+		var bounds = new GLatLngBounds();
+		
+		for (var i = points.length-1; i>0; i -= 2) {
+			var point = new GLatLng(parseFloat(points[i-1], 10), parseFloat(points[i], 10));
+			init_route.push(point);
+			bounds.extend(point);
+		}	
+		
+		if (init_route.length > 0) {
+			var zoom = (init_route.length == 1) ? 12: map.getBoundsZoomLevel(bounds);
+			map.setCenter(bounds.getCenter(), (zoom<5) ? 5:zoom);
+			
+			InitRoute(init_route);
+			//var point = init_route.pop();
+			//GDir1.loadFromWaypoints([point, point], {getPolyline:true});
+		}
+	}
+}	
+ 
+function StoreToURL(waypoints) {
+	var s = [];
+	
+	for (var i = 0; i < waypoints.length; i++) {
+		s.push(waypoints[i].getPoint().toUrlValue(6));
+	}
+	
+	window.location.hash = "#" + s.join(",");
+}
+ 
+function dragMarker() { // when waypoint marker is being dragged, start calculation of new route
+	if (isDragged == 2) { // exit if already waiting for GDir2.load to complete 
+		markerDragged = this;
+		return; 
+	}				
+	isDragged = 2; // tag that calculation of new route is started
+	
+	if (markerDragged) { //determine which marker triggered the recalculation
+		marker = markerDragged;
+		markerDragged = false;
+	}
+	else {
+		marker = this;
+	}
+	
+	lastIndex = marker.MyIndex;
+	var point = marker.getPoint();
+			
+	if (lastIndex > 0) {
+		if (lastIndex < waypoints.length - 1) {
+			prevIndex = lastIndex - 1;	
+			GDir2.loadFromWaypoints([waypoints[lastIndex - 1].getPoint(),point.toUrlValue(6),waypoints[lastIndex + 1].getPoint()],{getPolyline:true});	
+		}
+		else {
+			prevIndex = -1; lastIndex = lastIndex - 1; // recalculate path to this point
+			GDir2.loadFromWaypoints([waypoints[lastIndex].getPoint(),point.toUrlValue(6)],{getPolyline:true});
+		}
+	}
+	else if (waypoints.length > 1) {
+		prevIndex = -1;
+		GDir2.loadFromWaypoints([point.toUrlValue(6),waypoints[1].getPoint()],{getPolyline:true});
+	}
+}
+ 
+function getProximity(mouseLatLng) { 
+// displays myNode marker at closest point from mouseLatLng to polylines contained in gpolys array
+ 
+	var zoom, point;
+	
+	if (routeNodes.length == 0) { // cache is empty
+	// convert to pixels and cache coordinates of displayed polylines for better performance
+		var dist = 0;
+		zoom = map.getZoom();
+		
+		for (var i = 0; i < gpolys.length; i++) {
+			dist += gpolys[i].getLength();
+			
+			var last_point;			
+			
+			for (var j = ((i == 0) ? 0 : 1); j < gpolys[i].getVertexCount(); j++) {
+				var point = normalProj.fromLatLngToPixel(gpolys[i].getVertex(j), zoom)
+				point.x = parseInt(0.5+point.x);
+				point.y = parseInt(0.5+point.y);
+				
+				if (j==0 || last_point.x != point.x || last_point.y != point.y) {
+					routeNodes.push(point.x);
+					routeNodes.push(point.y);
+					routeNodes.push(i); // store the index of polyline containing this node
+					last_point = point;
+				}
+			}
+		}
+		
+		var panel;
+		
+		if (routeNodes.length > 0 && (panel = document.getElementById('distance'))) { 
+			panel.innerHTML = (dist/1000).toFixed(1) + " km";
+		}		
+	}
+	
+	var l = routeNodes.length;
+	
+	if (!mouseLatLng || l <= 1 || isDragged > 0) // no route is displayed or route is already being dragged
+		return;
+ 
+	zoom = map.getZoom();
+	var mousePx = normalProj.fromLatLngToPixel(mouseLatLng, zoom);
+	var mouseX = mousePx.x;
+	var mouseY = mousePx.y;
+	
+	var x = routeNodes[0];
+	var y = routeNodes[1];
+	var minX = x; // we will search closest point on the line to mouse position for displaying marker there available for dragging
+	var minY = y;
+	var minDist = 99999;
+	
+	for (var n = 3; n < l; n +=3) {
+		var x0 = x;
+		var y0 = y;
+		x = routeNodes[n];
+		y = routeNodes[n+1];
+		
+		if ((x < mouseX-50 && x0 < mouseX-50) || (x > mouseX+50 && x0 > mouseX+50)) {
+			continue;
+		}
+		if ((y < mouseY-50 && y0 < mouseY-50) || (y > mouseY+50 && y0 > mouseY+50)) {
+			continue;
+		}
+		
+		var dx = x - x0; 
+		var dy = y - y0;
+		var d = dx*dx + dy*dy; // lenght^2 of segment n
+ 
+		var u = ((mouseX - x) * dx + (mouseY - y) * dy) / d; // a bit of vector algebra :)
+		var x2 = x + (u*dx); // x,y coordinates in pixels of closest point to mouse in segment n
+		var y2 = y + (u*dy);
+		
+		var dist = (mouseX - x2)*(mouseX - x2) + (mouseY - y2)*(mouseY - y2); // distance^2 from mouse to closest point in segment n
+ 
+		if (minDist > dist) { // closest point in segment n is closest point overall so far
+			var d1 = (mouseX - x0)*(mouseX - x0) + (mouseY - y0)*(mouseY - y0); // distance^2 from mouse to end of segment n in pixels
+			var d2 = (mouseX - x)*(mouseX - x) + (mouseY - y)*(mouseY - y)
+ 
+			if ((d1 - dist) + (d2 - dist) > d) { // closest point is outside the segment, so the real closest point is either start or end of segment
+				if (d1 < d2) {
+					dist = d1; 
+					x2 = x0;
+					y2 = y0;
+				}
+				else {
+					dist = d2; 
+					x2 = x;
+					y2 = y;
+				}
+			}
+		}
+ 
+		if (minDist > dist) { // closest point in segment n is closest point overall so far
+			minDist = dist;
+			minX = x2;
+			minY = y2;
+			myNode.MyIndex = routeNodes[n+2]; // remember index of segment closest to mouse
+		}
+	}
+	
+	if (minDist > 2500) { // mouse is not close enough to the displayed line
+		myNode.hide(); // do not display marker for dragging the polyline
+	}
+	else {
+		for (n = waypoints.length; --n >= 0;) { // check if mouse is not too close to existing waypoints markers
+			var markerPx = normalProj.fromLatLngToPixel(waypoints[n].getPoint(), zoom);
+			
+			dx = markerPx.x - minX;
+			dy = markerPx.y - minY;
+			
+			if (dx*dx + dy*dy < 25) { // mouse is too close to existing marker
+				myNode.hide(); // do not show additional marker for dragging the line - the user is about to drag existing waypoint
+				return;
+			}	
+		}
+		
+		myNode.setPoint(normalProj.fromPixelToLatLng(new GPoint(minX, minY), zoom));
+		myNode.show(); // display marker for dragging the polyline
+	}
+ 
+	//document.getElementById('panel').innerHTML = '<br>Mouse distance to line ' + n + ': ' + minDist.toFixed(2);		
+}
+</script> 
+</html>

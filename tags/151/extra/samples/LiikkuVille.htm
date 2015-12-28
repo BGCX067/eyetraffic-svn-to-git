@@ -1,0 +1,1091 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"> 
+<html xmlns="http://www.w3.org/10/xhtml" xmlns:v="urn:schemas-microsoft-com:vml"> 
+  <head> 
+<META name="verify-v1" content="H5c+lOP+8CibKw/aPvb/YYIr1H0er/lThnBZ4OO1DL8=" /> 
+<meta http-equiv="content-type" content="text/html; charset=UTF-8" /> 
+    <meta name="title" content="GoogleMapAPI" /> 
+    
+    <meta name="keywords" content="Google Maps API" /> 
+<title>LiikkuVille</title> 
+ 
+    <link href="http://www.google.com/uds/css/gsearch.css" type="text/css" rel="stylesheet"/> 
+ 
+<style type="text/css"> 
+<!--
+ 
+ 
+    body {
+background-color: #CCCCFF;
+      color: black;
+      font-family: Arial, sans-serif;
+      font-size: small;
+ 
+    }
+ 
+A:hover {color: #00FF00; }
+-->
+</style> 
+ 
+<script 
+
+
+
+src="http://maps.google.com/maps?file=api&v=2&key=ABQIAAAAYxpy0HiKBWXiyhVrpVqkshTWg_xmhpETXrjHUj59zHLsinrq_xSAmAGI
+
+
+
+HF
+
+
+
+6kJpo3mJn5WnKDztG7kw"type="text/javascript"></script> 
+<script
+
+src="http://www.google.com/uds/api?file=uds.js&amp;v=1.0&amp;key=ABQIAAAAYxpy0HiKBWXiyhVrpVqkshRJmIwR4Jein9pLzw-cp
+
+
+
+nhyQ
+
+
+
+KPdtRQV-ysQoEX1QTSEwi7yi5pREVsOaA" type="text/javascript"></script> 
+ 
+</head> 
+ 
+<body onload = "mene(1)"; onunload="GUnload()"> 
+ 
+<script language="JavaScript" src="http://www.gvisit.com/record.php?sid=4c8d89019a2d72ae4a605e6e1ba85ab8" 
+
+
+
+type="text/javascript"></script> 
+ 
+<div id="otsa" style="position: absolute; top:0px;left:10px"><strong>Suomi-Finland. Kiintopistein&auml; muutama 
+ 
+kaupunki ja hiihtokeskus. </strong> 
+ 
+</div> 
+ 
+ 
+<div id="map" style="position: absolute; top:30px;left:10px;width: 256px; height: 512px"></div> 
+ 
+<div id="kartta" style="position: absolute; top:30px;left: 280px; width: 512px; height: 512px"> 
+Loading...<br/><br/>Kartta latautuu...<br/><br/> 
+Jos kartta ei koskaan latautunutkaan:<br/>- JavaScript on kytketty selaimestasi pois<br/> tai<br/> 
+- olet liikenteess&auml; fossiilisella selaimella<br/><br/> 
+ 
+Sivun alareunan linkist&auml; saat Firefoxin, se on paras.
+</div> 
+ 
+<div id="mittari" style="position: absolute; top:38px; left:440px; width:200px; height:10px; 
+
+
+
+color:black;font-size:10pt"></div> 
+ 
+<div id="city" style="position: absolute; top:38px; left:20px; width:100px; height:10px;color:yellow; 
+
+
+
+font-weight:bold; font-size:12pt"></div> 
+ 
+<div id="matka" style="position: absolute; top:38px; left:160px; width:100px; height:10px;color:yellow; 
+
+
+
+font-weight:bold; font-size:12pt"></div> 
+ 
+<div id="kaupunki" style="position: absolute; top:38px; left:300px; width:140px; height:10px; color:black; 
+
+
+
+font-weight:bold; font-size:12pt"></div> 
+ 
+ 
+ 
+ 
+ 
+<script type="text/javascript"> 
+    //<![CDATA[
+ 
+//////////////Idea and scripting by Esa
+//////////////Thanks for the API community
+ 
+document.getElementById("city").innerHTML = "Klikkaa nuppineulaa tai kirjoita paikkakuntahaku";
+ 
+// "tiny" marker icon
+var tiny = new GIcon();
+tiny.image = "http://labs.google.com/ridefinder/images/mm_20_blue.png";
+tiny.shadow = "http://labs.google.com/ridefinder/images/mm_20_shadow.png";
+tiny.iconSize = new GSize(12, 20);
+tiny.shadowSize = new GSize(22, 20);
+tiny.iconAnchor = new GPoint(6, 20);
+tiny.infoWindowAnchor = new GPoint(5, 1);
+ 
+// Nuppineulojen ja puhekuplien synnytys,
+// nimien, paikkojen ja matkojen taulukointi
+ 
+var paikka =[]
+var kaupunki =[]
+var matka = new Array(20);
+for ( var i=0; i< matka.length; i++ )matka[i] = new Array(20);
+ 
+var j = 0; //kaupungin id, itseasiassa = i
+var n = 0; //painonapilla valittu kaupunki (paikka)
+var sel = 0 ;//km on/off
+var tip =[];
+ 
+ 
+function createMarker(j,point,nimi,html) {
+var marker = new GMarker(point,{title:nimi, icon:tiny});
+html+='<br/><input type="button" value=" >> " onclick=" mene('+j+')">';
+GEvent.addListener(marker, "click", function() {
+marker.openInfoWindowHtml(html);
+});
+ 
+GEvent.addListener(marker,"mouseover", function()  {
+document.getElementById("city").innerHTML = nimi;
+if(matka[n][j]==0){matka[n][j]=matka[j][n]};
+if (sel==1){document.getElementById("matka").innerHTML = matka[n][j]+" km"};
+});
+GEvent.addListener(marker,"mouseout", function()  {
+document.getElementById("city").innerHTML = "";
+document.getElementById("matka").innerHTML = "";
+});
+paikka[i] = point;
+kaupunki[i] = nimi;
+ 
+return marker;
+}
+ 
+_mPreferMetric=true;
+ 
+//pikkukartta
+var map = new GMap2(document.getElementById("map"),{draggableCursor: 'auto', draggingCursor: 'pointer'});
+map.setCenter(new GLatLng(67, 25), 4);
+//map.addControl(new GMapTypeControl(1));
+map.addControl(new GSmallZoomControl(),new GControlPosition(G_ANCHOR_BOTTOM_RIGHT, new GSize(5,15)));
+// map.addControl(new GScaleControl());
+ 
+// osoitin
+ 
+var arrowIcon = new GIcon(
+G_DEFAULT_ICON,
+"http://maps.google.com/mapfiles/arrow.png",
+null,
+"http://www.google.com/intl/en_ALL/mapfiles/arrowshadow.png"
+);
+arrowIcon.iconAnchor = new GPoint(6, 34);
+ 
+ 
+var Icon = new GIcon();
+Icon.image = "punpallo.PNG";
+Icon.iconSize = new GSize(12, 12);
+//Icon.shadowSize = new GSize(0,0);
+Icon.iconAnchor = new GPoint(6, 6);
+Icon.infoWindowAnchor = new GPoint(6, 6);
+//Icon.infoShadowAnchor = new GPoint(6, 6);
+Icon.dragCrossAnchor = new GPoint(0, 0);
+Icon.maxHeight = 6;
+ 
+ 
+//iso kartta
+var kartta = new GMap2(document.getElementById("kartta"));
+kartta.setCenter(new GLatLng(60.17173, 24.94106), 13);
+kartta.addControl(new GMapTypeControl(1));
+kartta.addControl(new GLargeMapControl(),new GControlPosition(G_ANCHOR_TOP_LEFT, new GSize(5,30)));
+kartta.addControl(new GScaleControl());
+new GKeyboardHandler(kartta);
+kartta.enableContinuousZoom();
+kartta.enableDoubleClickZoom();
+//kartta.enableScrollWheelZoom(); did not work
+ 
+ 
+//osoittimen paikka      
+var osoitin = new GMarker(kartta.getCenter(),{icon: arrowIcon, draggable:true, bouncy:false});            
+map.addOverlay(osoitin);
+osoitin.enableDragging();
+GEvent.addListener(osoitin, "dragend", function() {
+kartta.panTo(osoitin.getPoint());
+});
+ 
+function findPointer(){
+var marlat=osoitin.getPoint().lat();
+var marlng=osoitin.getPoint().lng();
+var bounds=map.getBounds();
+var maxlng=bounds.getNorthEast().lng();
+var minlng=bounds.getSouthWest().lng();
+var maxlat=bounds.getNorthEast().lat();
+var minlat=bounds.getSouthWest().lat();
+if(marlat>maxlat||marlat<minlat||marlng>maxlng||marlng<minlng)
+{map.panTo(new GLatLng(marlat,marlng))
+}}
+ 
+GEvent.addListener(kartta,"moveend", findPointer);
+ 
+ 
+ 
+//klikki
+GEvent.addListener(map, 'click', function(overlay,point){
+//kartta.panTo(point);
+if(point){map.closeInfoWindow();
+}});
+ 
+//koordinaattimittari
+GEvent.addListener(kartta, "move", function() {
+var center = kartta.getCenter();
+var LngLatStr = + center.lat().toFixed(5) +', ' + center.lng().toFixed(5);
+document.getElementById("mittari").innerHTML = LngLatStr;
+osoitin.setPoint(kartta.getCenter());
+});
+ 
+//[>>]painonappi
+ 
+function mene(i){kartta.panTo(paikka[i]);
+document.getElementById("kaupunki").innerHTML = kaupunki[i];
+n = i; sel = 1;
+searchControl.execute(kaupunki[i]);
+};
+ 
+GEvent.addListener(kartta, "moveend", function() {
+document.getElementById("kaupunki").innerHTML ='';sel = 0
+});
+ 
+///Geo
+ 
+var geocoder = new GClientGeocoder();
+ 
+function showAddress(address,fi) {
+if(fi){address+= " Finland"}
+geocoder.getLatLng(
+address,function(point) {
+if (!point) {alert(address +"  ??? Sorry. En tunne.");
+} else {
+kartta.panTo(point);
+}});}
+ 
+ 
+//tippigeneraattori
+//tipit
+tip[1]= 'kaksoisklikkaus keskittaa kartan'
+tip[2]= 'kokeile nappaimiston [+] ja [-]'
+tip[3]= 'kokeile nuolinappaimia'
+tip[4]= 'ison kartan koordinaatit ovat kartan keskikohta'
+tip[5]= 'valimatkan kohde valitaan infokuplan painikkeella'
+tip[6]= 'pikkukarttaakin voi zoomata'
+tip[7]= 'Suomen kartat ovat tulossa'
+tip[8]= 'kokeile klikata Googlen logoa'
+tip[9]= 'kohteita lisataan'
+tip[10]= 'infokuplien sisalto kehittyy joka paiva'
+ 
+ 
+ 
+ 
+// Helsinki     
+                var nimi = 'Helsinki'; 
+                var i=1;
+		var point = new GLatLng(60.17173,24.94106);
+		
+var html='<b>Helsinki</b><br>';
+html+='<a href=http://www.polttoaine.net/index2.php?kaupunki=pk_seutu target=_blank>Bensan hinta</a><br>';
+html+='<a href=http://www.ek.fi/ek_suomeksi/nettikamera/index.php target=_blank>Tori</a> | ';
+html+='<a href=http://www.locationpreview.com/viewcam.php?id=113 target=_blank>Lasipalatsi</a><br/>';
+html+='<a href=http://www.fmi.fi/saa/paikalli.html?kunta=Helsinki target=_blank>S&auml;&auml;1</a> | ';
+html+='<a href=http://www.foreca.com/fin/saa/main.php?c=fin&spot=Helsinki target=_blank>S&auml;&auml;2</a> <br/>';
+html+='<a href=http://www.city.fi/lehti/tapahtumat/?city=Helsinki target=_blank>Tapahtumia </a><br /> ';
+html+='<a href=http://www.kaupunkiopas.com/kaupunki/Helsinki/ target=_blank>Kaupunkiopas</a><br /> ';
+html+='<a href=http://www.helsinki-vantaa.fi/saapuvatulkomaa target=_blank>Helsinki-Vantaa</a><br /> ';
+html+='<a href=http://www.ytv.fi/fin/liikenne/aikataulut/ target=_blank>Julkiset</a><br />';
+var marker = createMarker(i,point,nimi,html);
+map.addOverlay(marker);
+ 
+ 
+matka[i][1]=0;
+matka[i][2]=165;
+matka[i][3]=270;
+matka[i][4]=382;
+matka[i][5]=607;
+matka[i][6]=815;
+matka[i][7]=176;
+matka[i][8]=237;
+matka[i][9]=104;
+matka[i][10]=437;
+matka[i][11]=1103;
+matka[i][12]=944;
+matka[i][13]=796;
+matka[i][14]=419;
+matka[i][15]=221;
+matka[i][16]=0;
+matka[i][17]=0;
+matka[i][18]=0;
+matka[i][19]=0;
+matka[i][20]=0;
+ 
+ 
+ 
+//Turku
+                var nimi = 'Turku'; 
+                var i=2;
+		var point = new GLatLng(60.4545,22.255);
+var html='<b>Turku</b><br>';
+html+='<a href=http://www.polttoaine.net/index2.php?kaupunki=365 target=_blank>Bensan hinta</a><br>';
+html+='<a href=http://www.yle.fi/eskonreitit/helsinkiturku.html target=_blank>Kelikamera</a> | ';
+html+='<a href=http://62.73.32.2/ target=_blank>Tori</a><br>';
+html+='<a href=http://www.fmi.fi/saa/paikalli.html?kunta=Turku target=_blank>S&auml;&auml;1</a> | ';
+html+='<a href=http://www.foreca.com/fin/saa/main.php?c=fin&spot=Turku target=_blank>S&auml;&auml;2  </a><br>';
+html+='<a href=http://www.city.fi/lehti/tapahtumat/?city=Turku target=_blank>Tapahtumia </a><br>';
+html+='<a href=http://www.kaupunkiopas.com/kaupunki/Turku/ target=_blank>Kaupunkiopas</a><br />';
+html+='<a href=http://bussit.turku.fi/traveller/matkainfo target=_blank>Julkiset</a><br />';
+var marker = createMarker(i,point,nimi,html);
+map.addOverlay(marker);
+ 
+ 
+matka[i][1]=165;
+matka[i][2]=0;
+matka[i][3]=304;
+matka[i][4]=449;
+matka[i][5]=636;
+matka[i][6]=861;
+matka[i][7]=155;
+matka[i][8]=138;
+matka[i][9]=220;
+matka[i][10]=547;    //Turku i = 2
+matka[i][11]=1115;
+matka[i][12]=976;
+matka[i][13]=848;
+matka[i][14]=349;
+matka[i][15]=361;
+matka[i][16]=0;
+matka[i][17]=0;
+matka[i][18]=0;
+matka[i][19]=0;
+matka[i][20]=0;
+ 
+ 
+//Jyvaskyla	
+                var nimi = 'Jyvaskyla'; 
+                var i=3;
+		var point = new GLatLng(62.24158,25.74809);
+var html='<b>Jyv&auml;skyl&auml;</b><br>';
+html+='<a href=http://www.polttoaine.net/index2.php?kaupunki=78 target=_blank>Bensan hinta</a><br> ';
+html+='<a href=http://www.yle.fi/eskonreitit/helsinkijyvaskylakokkola.html target=_blank>Kelikamera</a><br>';
+html+='<a href=http://media.keskisuomalainen.fi/webcam/index.html target=_blank>K&auml;velykatu</a><br> ';
+html+='<a href=http://www.fmi.fi/saa/paikalli.html?kunta=Jyvaskyla target=_blank>S&auml;&auml;1</a> | ';
+html+='<a href=http://www.foreca.com/fin/saa/main.php?c=fin&spot=Jyvaskyla target=_blank>S&auml;&auml;2</a><br>';
+html+='<a href=http://www.kaupunkiopas.com/kaupunki/Jyv%E4skyl%E4/ target=_blank>Kaupunkiopas</a><br />';
+var marker = createMarker(i,point,nimi,html);
+map.addOverlay(marker);
+ 
+ 
+matka[i][1]=270;
+matka[i][2]=304;
+matka[i][3]=0;
+matka[i][4]=147;
+matka[i][5]=338;
+matka[i][6]=561;
+matka[i][7]=150;
+matka[i][8]=261;
+matka[i][9]=171;
+matka[i][10]=247;    //Jyvaskyla i = 3
+matka[i][11]=852;
+matka[i][12]=694;
+matka[i][13]=553;
+matka[i][14]=282;
+matka[i][15]=227;
+matka[i][16]=0;
+matka[i][17]=0;
+matka[i][18]=0;
+matka[i][19]=0;
+matka[i][20]=0;
+ 
+//Kuopio
+                var nimi ='Kuopio'
+	        var i=4;
+		var point = new GLatLng(62.9, 27.68);
+var html='<b>Kuopio</b><br> ';
+html+='<a href=http://www.polttoaine.net/index2.php?kaupunki=149 target=_blank>Bensan hinta</a><br> ';
+html+='<a href=http://www.yle.fi/eskonreitit/lahtikuopio.html target=_blank>Kelikamera</a><br> ';
+html+='<a href=http://www.fmi.fi/saa/paikalli.html?kunta=Kuopio target=_blank>S&auml;&auml;1</a> | ';
+html+='<a href=http://www.foreca.com/fin/saa/main.php?c=fin&spot=Kuopio target=_blank>S&auml;&auml;2  </a> | ';
+html+='<a href=http://weather.savonia-amk.fi/ target=_blank>S&auml;&auml;3</a><br> ';
+html+='<a href=http://www.city.fi/lehti/tapahtumat/?city=Kuopio target=_blank>Tapahtumia </a><br> ';
+html+='<a href="http://www.kuopiomail.fi/" title ="ajankohtaista" target="_blank">Kuopiomail</a><br/>';
+html+='<a href=http://www.kaupunkiopas.com/kaupunki/Kuopio/ target=_blank>Kaupunkiopas</a><br />';
+html+='<a href=http://www.kuopio.fi/net.nsf/TD/160903103259014?OpenDocument target=_blank>Julkiset</a><br>';
+var marker = createMarker(i,point,nimi,html);
+map.addOverlay(marker);
+ 
+ 
+matka[i][1]=382;
+matka[i][2]=454;
+matka[i][3]=144;
+matka[i][4]=0;
+matka[i][5]=288;
+matka[i][6]=508;
+matka[i][7]=297;
+matka[i][8]=403;
+matka[i][9]=280;
+matka[i][10]=138;    //Kuopio i = 4
+matka[i][11]=804;
+matka[i][12]=640;
+matka[i][13]=415;
+matka[i][14]=395;
+matka[i][15]=277;
+matka[i][16]=0;
+matka[i][17]=0;
+matka[i][18]=0;
+matka[i][19]=0;
+matka[i][20]=0;
+ 
+ 
+//Oulu
+                var nimi = 'Oulu'
+                var i = 5;
+		var point = new GLatLng(65.0097,25.4824);
+var html='<b>Oulu</b><br>';
+html+='<a href=http://www.polttoaine.net/index2.php?kaupunki=241 target=_blank>Bensan hinta</a><br> ';
+html+='<a href=http://www.yle.fi/eskonreitit/oulukuusamo.html target=_blank>Kelikamera</a><br>';
+html+='<a href=http://www.ouka.fi/kamera/ target=_blank>Kaupunkikamera</a><br> ';
+html+='<a href=http://www.fmi.fi/saa/paikalli.html?kunta=Oulu target=_blank>S&auml;&auml;1</a> | ';
+html+='<a href=http://www.foreca.com/fin/saa/main.php?c=fin&spot=Oulu target=_blank>S&auml;&auml;2  </a><br> ';
+html+='<a href=http://www.city.fi/lehti/tapahtumat/?city=Oulu target=_blank>Tapahtumia </a><br>';
+html+='<a href=http://www.kaenkky.com/ title="suomeksi pitsa" target=_blank>K&auml;nkky</a><br> ';
+html+='<a href=http://www.ouluthisweek.net/ target=_blank>OuluThisWeek</a><br> ';
+html+='<a href=http://www.kaupunkiopas.com/kaupunki/Oulu/ target=_blank>Kaupunkiopas</a><br />';
+html+='<a href=http://www.ouka.fi/liikenne/index.html target=_blank>Julkiset</a><br />';
+var marker = createMarker(i,point,nimi,html);
+map.addOverlay(marker);
+ 
+ 
+matka[i][1]=607;
+matka[i][2]=636;
+matka[i][3]=337;
+matka[i][4]=288;
+matka[i][5]=0;
+matka[i][6]=223;
+matka[i][7]=490;
+matka[i][8]=511;
+matka[i][9]=509;
+matka[i][10]=396;    //Oulu i = 5
+matka[i][11]=509;
+matka[i][12]=356;
+matka[i][13]=215;
+matka[i][14]=320;
+matka[i][15]=548;
+matka[i][16]=0;
+matka[i][17]=0;
+matka[i][18]=0;
+matka[i][19]=0;
+matka[i][20]=0;
+ 
+//Rovaniemi
+                var nimi ='Rovaniemi'
+                var i = 6;
+                var point = new GLatLng(66.4894,25.7382);
+var html='<b>Rovaniemi</b><br> ';
+html+='<a href=http://www.yle.fi/eskonreitit/oulurovaniemiivalo.html target=_blank>Kelikamera</a><br>';
+html+='<a href=http://www.rovaniemi.fi/images/webcam/Kamera2_00001.jpg target=_blank>Katukamera</a><br> ';
+html+='<a href=http://www.fmi.fi/saa/paikalli.html?kunta=Rovaniemi target=_blank>S&auml;&auml;1</a> | ';
+html+='<a href=http://www.foreca.com/fin/saa/main.php?c=fin&spot=Rovaniemi target=_blank>S&auml;&auml;2</a><br>';
+html+='<a href=http://www.city.fi/lehti/tapahtumat/?city=Oulu target=_blank>Tapahtumia </a><br> ';
+html+='<a href=http://www.kaupunkiopas.com/kaupunki/Rovaniemi/ target=_blank>Kaupunkiopas</a><br />';
+var marker = createMarker(i,point,nimi,html);
+map.addOverlay(marker);
+ 
+	
+matka[i][1]=815;
+matka[i][2]=861;
+matka[i][3]=563;
+matka[i][4]=514;
+matka[i][5]=223;
+matka[i][6]=0;
+matka[i][7]=717;
+matka[i][8]=736;
+matka[i][9]=735;
+matka[i][10]=549;    //Rovaniemi i = 6
+matka[i][11]=289;
+matka[i][12]=149;
+matka[i][13]=191;
+matka[i][14]=545;
+matka[i][15]=755;
+matka[i][16]=0;
+matka[i][17]=0;
+matka[i][18]=0;
+matka[i][19]=0;
+matka[i][20]=0;
+ 
+ 
+//Tampere  
+                var nimi = 'Tampere'
+                var i = 7;
+		var point = new GLatLng(61.5,23.77);
+var html='<b>Tampere</b><br>';
+html+='<a href=http://www.polttoaine.net/index2.php?kaupunki=354 target=_blank>Bensan hinta</a><br> ';
+html+='<a href=http://www.yle.fi/eskonreitit/tamperepori.html target=_blank>Kelikamera</a><br>';
+html+='<a href=http://www.jotain.com/tamperecam/ target=_blank>Useita kameroita</a><br>';
+html+='<a href=http://www.fmi.fi/saa/paikalli.html?kunta=Tampere target=_blank>S&auml;&auml;1</a> | ';
+html+='<a href=http://www.foreca.com/fin/saa/main.php?c=fin&spot=Tampere target=_blank>S&auml;&auml;2</a><br>';
+html+='<a href=http://www.city.fi/lehti/tapahtumat/?city=Tampere target=_blank>Tapahtumia </a><br>';
+html+='<a href=http://www.huviopas.net/tampere/index.php target=_blank>Huviopas </a><br> ';
+html+='<a href=http://www.kaupunkiopas.com/kaupunki/Tampere/ target=_blank>Kaupunkiopas</a><br />';
+html+='<a href=http://www.tampere.fi/tkl/ target=_blank>Julkiset</a><br />';
+var marker = createMarker(i,point,nimi,html);
+map.addOverlay(marker);
+ 
+ 
+matka[i][1]=176;
+matka[i][2]=155;
+matka[i][3]=150;
+matka[i][4]=293;
+matka[i][5]=490;
+matka[i][6]=717;
+matka[i][7]=0;
+matka[i][8]=114;
+matka[i][9]=128;
+matka[i][10]=394;   //Tampere i = 7
+matka[i][11]=1003;
+matka[i][12]=832;
+matka[i][13]=702;
+matka[i][14]=242;
+matka[i][15]=274;
+matka[i][16]=0;
+matka[i][17]=0;
+matka[i][18]=0;
+matka[i][19]=0;
+matka[i][20]=0;
+ 
+//Pori  
+                var nimi = 'Pori'
+                var i = 8;
+		var point = new GLatLng(61.483,21.7833);
+var html='<b>Pori</b><br>';
+html+='<a href=http://www.polttoaine.net/index2.php?kaupunki=271 target=_blank>Bensan hinta</a><br> ';
+html+='<a href=http://www.yle.fi/eskonreitit/tamperepori.html target=_blank>Kelikamera</a><br> ';
+html+='<a href=http://www.pori.fi/kamerat/ target=_blank>Kaupunkikameroita</a><br>';
+html+='<a href=http://www.fmi.fi/saa/paikalli.html?kunta=Pori target=_blank>S&auml;&auml;1</a> | ';
+html+='<a href=http://www.foreca.com/fin/saa/main.php?c=fin&spot=Pori target=_blank>S&auml;&auml;2  </a><br> ';
+html+='<a href=http://www.city.fi/lehti/tapahtumat/?city=Pori target=_blank>Tapahtumia </a><br> ';
+html+='<a href=http://www.kaupunkiopas.com/kaupunki/Pori/ target=_blank>Kaupunkiopas</a><br />';
+var marker = createMarker(i,point,nimi,html);
+map.addOverlay(marker);
+ 
+ 
+matka[i][1]=237;
+matka[i][2]=138;
+matka[i][3]=260;
+matka[i][4]=403;
+matka[i][5]=511;
+matka[i][6]=736;
+matka[i][7]=114;
+matka[i][8]=0;
+matka[i][9]=237;
+matka[i][10]=509;    //Pori i = 8
+matka[i][11]=1025;
+matka[i][12]=0;
+matka[i][13]=724;
+matka[i][14]=196;
+matka[i][15]=0;
+matka[i][16]=0;
+matka[i][17]=0;
+matka[i][18]=0;
+matka[i][19]=0;
+matka[i][20]=0;
+ 
+//Lahti  
+                var nimi = 'Lahti'
+                var i = 9;
+		var point = new GLatLng(60.982,25.66);
+var html='<b>Lahti</b><br>';
+html+='<a href=http://www.polttoaine.net/index2.php?kaupunki=162 target=_blank>Bensan hinta</a><br> ';
+html+='<a href=http://www.yle.fi/eskonreitit/lahtikouvolalappeenranta.html target=_blank>Kelikamera</a><br>';
+html+='<a href=http://www.locationpreview.com/countries/view_106.html target=_blank>Satamakamera</a><br> ';
+html+='<a href=http://www.fmi.fi/saa/paikalli.html?kunta=Lahti target=_blank>S&auml;&auml;1</a> | ';
+html+='<a href=http://www.foreca.com/fin/saa/main.php?c=fin&spot=Lahti target=_blank>S&auml;&auml;2  </a><br> ';
+html+='<a href=http://www.city.fi/lehti/tapahtumat/?city=Lahti target=_blank>Tapahtumia </a><br> ';
+html+='<a href=http://www.kaupunkiopas.com/kaupunki/Lahti/ target=_blank>Kaupunkiopas</a><br/>';
+var marker = createMarker(i,point,nimi,html);
+map.addOverlay(marker);
+ 
+ 
+matka[i][1]=104;
+matka[i][2]=0;
+matka[i][3]=0;
+matka[i][4]=0;
+matka[i][5]=0;
+matka[i][6]=0;
+matka[i][7]=0;
+matka[i][8]=0;
+matka[i][9]=0;
+matka[i][10]=0;
+matka[i][11]=0;
+matka[i][12]=0;
+matka[i][13]=0;
+matka[i][14]=0;
+matka[i][15]=0;
+matka[i][16]=0;
+matka[i][17]=0;
+matka[i][18]=0;
+matka[i][19]=0;
+matka[i][20]=0;
+ 
+//Joensuu 
+                var nimi = 'Joensuu'
+                var i = 10;
+		var point = new GLatLng(62.604,29.78);
+var html='<b>Joensuu</b><br>';
+html+='<a href=http://www.polttoaine.net/index2.php?kaupunki=241 target=_blank>Bensan hinta</a><br> ';
+html+='<a href=http://www.yle.fi/eskonreitit/joensuukuopioviitasaarivaasa.html target=_blank>Kelikamera</a> | ';
+html+='<a href=http://www.eastpop.com/webcam.html target=_blank>Tori</a><br> '; 
+html+='<a href=http://www.fmi.fi/saa/paikalli.html?kunta=Joensuu target=_blank>S&auml;&auml;1</a> | ';
+html+='<a href=http://www.foreca.com/fin/saa/main.php?c=fin&spot=Joensuu target=_blank>S&auml;&auml;2  </a><br> ';
+html+='<a href=http://www.city.fi/lehti/tapahtumat/?city=Joensuu target=_blank>Tapahtumia </a><br> ';
+html+='<a href=http://www.kaupunkiopas.com/kaupunki/Joensuu/ target=_blank>Kaupunkiopas</a><br />';
+html+='<a href=http://www.jns.fi/Resource.phx/sivut/sivut-jns/aikataulut/paasivu.htx';
+html+=' target=_blank>Julkiset</a><br/>';
+var marker = createMarker(i,point,nimi,html);
+map.addOverlay(marker);
+ 
+		
+matka[i][1]=437;
+matka[i][2]=0;
+matka[i][3]=0;
+matka[i][4]=0;
+matka[i][5]=0;
+matka[i][6]=0;
+matka[i][7]=0;
+matka[i][8]=0;
+matka[i][9]=0;
+matka[i][10]=0;
+matka[i][11]=0;
+matka[i][12]=0;
+matka[i][13]=0;
+matka[i][14]=0;
+matka[i][15]=0;
+matka[i][16]=0;
+matka[i][17]=0;
+matka[i][18]=0;
+matka[i][19]=0;
+matka[i][20]=0;
+ 
+// Saariselka
+                var nimi = 'Saariselka'
+                var i = 11;
+		var point = new GLatLng(68.415,27.415);
+var html='<a href=http://www.saariselka.fi/ target=_blank><b>Saariselk&auml;</b></a><br>';
+html+='<a href=http://www.yle.fi/eskonreitit/oulurovaniemiivalo.html target=_blank>Kelikamera</a><br>';
+html+='<a href=http://www.fmi.fi/saa/paikalli.html?kunta=Saariselk%E4 target=_blank>s&auml;&auml;</a> <br>'; 
+html+='<a href=http://www.saariselka.fi/portal/livekuva.jpg target=_blank>Rinnekamera </a><br />';
+var marker = createMarker(i,point,nimi,html);
+map.addOverlay(marker);
+ 
+ 
+matka[i][1]=1103;
+matka[i][2]=0;
+matka[i][3]=0;
+matka[i][4]=0;
+matka[i][5]=0;
+matka[i][6]=0;
+matka[i][7]=0;
+matka[i][8]=0;
+matka[i][9]=0;
+matka[i][10]=0;
+matka[i][11]=0;
+matka[i][12]=0;
+matka[i][13]=0;
+matka[i][14]=0;
+matka[i][15]=0;
+matka[i][16]=0;
+matka[i][17]=0;
+matka[i][18]=0;
+matka[i][19]=0;
+matka[i][20]=0;
+ 
+ 
+// Levi
+                var nimi = 'Levi'
+                var i = 12;
+		var point = new GLatLng(67.8,24.83);
+var html='<a href=http://www.levi.fi/pages/index.php target=_blank><b>Levi</b></a><br>';
+html+='<a href=http://www.yle.fi/eskonreitit/oulutorniokilpisjarvi.html target=_blank>Kelikamera</a> <br> ';
+html+='<a href=http://www.levi.fi/online/saa/ target=_blank>Rinnekamerat </a><br />';
+var marker = createMarker(i,point,nimi,html);
+map.addOverlay(marker);
+ 
+ 
+matka[i][1]=944;
+matka[i][2]=0;
+matka[i][3]=0;
+matka[i][4]=0;
+matka[i][5]=0;
+matka[i][6]=0;
+matka[i][7]=0;
+matka[i][8]=0;
+matka[i][9]=0;
+matka[i][10]=0;
+matka[i][11]=0;
+matka[i][12]=0;
+matka[i][13]=0;
+matka[i][14]=0;
+matka[i][15]=0;
+matka[i][16]=0;
+matka[i][17]=0;
+matka[i][18]=0;
+matka[i][19]=0;
+matka[i][20]=0;
+ 
+ 
+// Ruka
+                var nimi = 'Ruka'
+                var i = 13;
+		var point = new GLatLng(66.162,29.1388);
+var html='<a href=http://www.ruka.fi/ target=_blank><b>Ruka</b></a><br>';
+html+='<a href=http://www.yle.fi/eskonreitit/oulukuusamo.html target=_blank>Kelikamera</a> <br> ';
+html+='<a href=http://www.ruka.fi/webbikamerat/ target=_blank>Rinnekamerat </a> <br> ';
+html+='<a href=http://www.kaupunkiopas.com/kaupunki/Kuusamo/ target=_blank>Kaupunkiopas</a><br />';
+var marker = createMarker(i,point,nimi,html);
+map.addOverlay(marker);
+ 
+ 
+matka[i][1]=796;
+matka[i][2]=0;
+matka[i][3]=0;
+matka[i][4]=0;
+matka[i][5]=0;
+matka[i][6]=0;
+matka[i][7]=0;
+matka[i][8]=0;
+matka[i][9]=0;
+matka[i][10]=0;
+matka[i][11]=0;
+matka[i][12]=0;
+matka[i][13]=0;
+matka[i][14]=0;
+matka[i][15]=0;
+matka[i][16]=0;
+matka[i][17]=0;
+matka[i][18]=0;
+matka[i][19]=0;
+matka[i][20]=0;
+ 
+//Vaasa 
+                var nimi = 'Vaasa'
+                var i = 14;
+		var point = new GLatLng(63.1,21.6);
+var html='<b>Vaasa</b><br>';
+html+='<a href=http://www.polttoaine.net/index2.php?kaupunki=381 target=_blank>Bensan hinta</a><br> ';
+html+='<a href=http://www.yle.fi/eskonreitit/helsinkitamperevaasa.html target=_blank>Kelikamera</a> | ';
+html+='<a href=http://www2.syh.fi/replot/index.html target=_blank>Nettikamera</a><br> ';
+html+='<a href=http://www.fmi.fi/saa/paikalli.html?kunta=Vaasa target=_blank>S&auml;&auml;1</a> | ';
+html+='<a href=http://www.foreca.com/fin/saa/main.php?c=fin&spot=Vaasa target=_blank>S&auml;&auml;2  </a><br>'; 
+html+='<a href=http://www.pohjanmaanmatkailu.fi/Default.aspx?id=285229 target=_blank>Tapahtumia </a><br> ';
+html+='<a href=http://www.kaupunkiopas.com/kaupunki/Vaasa/ target=_blank>Kaupunkiopas</a><br />';
+html+='<a href=http://www.vaasa.fi/matkailu/Default.aspx?id=319330 target=_blank>Julkiset</a><br />';
+var marker = createMarker(i,point,nimi,html);
+map.addOverlay(marker);
+ 
+ 
+matka[i][1]=419;
+matka[i][2]=0;
+matka[i][3]=0;
+matka[i][4]=0;
+matka[i][5]=0;
+matka[i][6]=0;
+matka[i][7]=0;
+matka[i][8]=0;
+matka[i][9]=0;
+matka[i][10]=0;
+matka[i][11]=0;
+matka[i][12]=0;
+matka[i][13]=0;
+matka[i][14]=0;
+matka[i][15]=0;
+matka[i][16]=0;
+matka[i][17]=0;
+matka[i][18]=0;
+matka[i][19]=0;
+matka[i][20]=0;
+ 
+ 
+//Lappeenranta 
+                var nimi = 'Lappeenranta'
+                var i = 15;
+		var point = new GLatLng(61.066,28.183);
+var html='<b>Lappeenranta</b><br>';
+html+='<a href=http://www.polttoaine.net/index2.php?kaupunki=169 target=_blank>Bensan hinta</a><br> ';
+html+='<a href=http://www.yle.fi/eskonreitit/lappeenrantajoensuuoulu.html target=_blank>Kelikamera</a> | ';
+html+='<a href=http://lame.lut.fi/vaihe7/ target=_blank>Nettikamera</a><br> ';
+html+='<a href=http://www.fmi.fi/saa/paikalli.html?kunta=Lappeenranta target=_blank>S&auml;&auml;1</a> | ';
+html+='<a href=http://www.foreca.com/fin/saa/main.php?c=fin&spot=Lappeenranta';
+html+=' target=_blank>S&auml;&auml;2</a><br>';
+html+='<a href=http://www.esaimaa.fi/saa/juttu2/sivu.html target=_blank>Tapahtumia </a><br>';
+html+='<a href=http://www.kaupunkiopas.com/kaupunki/Lappeenranta/ target=_blank>Kaupunkiopas</a><br />';
+html+='<a href=http://lprwilima.lappeenranta.fi:8080/traveller/matkainfo target=_blank>Julkiset</a><br/>';
+var marker = createMarker(i,point,nimi,html);
+map.addOverlay(marker);
+ 
+ 
+matka[i][1]=0;
+matka[i][2]=0;
+matka[i][3]=0;
+matka[i][4]=0;
+matka[i][5]=0;
+matka[i][6]=0;
+matka[i][7]=0;
+matka[i][8]=0;
+matka[i][9]=0;
+matka[i][10]=0;
+matka[i][11]=0;
+matka[i][12]=0;
+matka[i][13]=0;
+matka[i][14]=0;
+matka[i][15]=0;
+matka[i][16]=0;
+matka[i][17]=0;
+matka[i][18]=0;
+matka[i][19]=0;
+matka[i][20]=0;
+ 
+ 
+ 
+    //]]>
+    </script> 
+ 
+<div id="ilosanoma" style="position:absolute;top:10px;left:820px;width:180px"> 
+ 
+<script type="text/javascript"><!--
+google_ad_client = "pub-3649938975494252";
+google_ad_width = 160;
+google_ad_height = 600;
+google_ad_format = "160x600_as";
+google_ad_type = "text";
+google_ad_channel ="";
+//--></script> 
+<script type="text/javascript"
+
+  src="http://pagead2.googlesyndication.com/pagead/show_ads.js"> 
+</script> 
+ 
+ 
+ 
+<script type="text/javascript"><!--
+google_ad_client = "pub-3649938975494252";
+google_ad_width = 120;
+google_ad_height = 60;
+google_ad_format = "120x60_as_rimg";
+google_cpa_choice = "CAAQkeubzgEaCJ1fyyljG-_6KLG0mHQ";
+//--></script> 
+ 
+<script type="text/javascript" src="http://pagead2.googlesyndication.com/pagead/show_ads.js"> 
+</script> 
+ 
+<script type="text/javascript"><!--
+google_ad_client = "pub-3649938975494252";
+google_ad_width = 125;
+google_ad_height = 125;
+google_ad_format = "125x125_as_rimg";
+google_cpa_choice = "CAAQz8znzwEaCDrbANYq7YrCKL_cl3Q";
+//--></script> 
+<script type="text/javascript" src="http://pagead2.googlesyndication.com/pagead/show_ads.js"> 
+</script> 
+ 
+ 
+ 
+<br/> 
+ 
+<img src="/cgi-bin/Count.cgi?ft=0|md=6|dd=sblack|df=ojalesa.dat" alt=""> 
+ 
+</div> 
+ 
+<div id="hakuLaatikko" style="position: absolute; text-align:left;top:550px;left:10px;width:780"> 
+    <form action="#" onsubmit="showAddress(this.haku.value,this.suomi.checked); return false"> 
+ 
+        <input type="text" size="40" id="haku" name="haku" title="Kirjoita paikkakunta" /> 
+        <input type="checkbox" id="suomi" name="suomi" title="vain Suomesta" checked />FI &nbsp;&nbsp;
+        <input type="submit" value=" >> " title="Hae" /> 
+    </form> 
+</div> 
+ 
+<div id="searchcontrol" style="position: absolute; text-align:left;top:570px;left:500px;width:300; 
+
+
+
+background:lightblue" title="You can drag me"></div> 
+ 
+<div id="linkit" style="position: absolute; top:600px;left:10px;width:150px"> 
+ 
+<p> 
+<a href=
+
+"http://www.vr.fi/heo/index.html"
+
+title="stoket">VR</a> 
+</p> 
+<p> 
+<a href=
+
+"http://www.finnair.fi/"
+
+title="flygarit">Finnair</a> 
+</p> 
+<p> 
+<a href=
+
+"http://www.matka.fi/fi/" title="reittihaku">matka.fi</a> 
+</p> 
+<p> 
+<a href=
+
+"http://koti.mbnet.fi/ojalesa/koe/dual.html" 
+
+title="se kaksoiskartta;">satelliittisurffaus</a> 
+ 
+</p> 
+<p> 
+<a href=
+
+"http://www.gvisit.com/map.php?sid=4c8d89019a2d72ae4a605e6e1ba85ab8" title="muut vierailijat kartalla"> 
+gVisit</a> 
+</p> 
+<p> 
+<a href=
+
+"http://www.maplandia.com/finland/" 
+
+title="satellite maps">Maplandia</a> 
+</p> 
+<p> 
+<a href=
+
+"http://nuppineulat.blogspot.com/"
+
+title="Virtuaaliset nuppineulat">blog</a> 
+<p> 
+</p> 
+<a href=
+
+"http://creativecommons.org/licenses/by-nc-nd/2.0/" title="Creative Commons">CC</a> 
+</p> 
+<p> 
+<a href="http://koti.mbnet.fi/ojalesa/exam/index.html" title="Google Maps API esimerkkisivuja">Example index</a> 
+</p> 
+ 
+</div> 
+ 
+ 
+ 
+<div id="historia" style="position: absolute; top:1000px;left:10px;width:400px"> 
+ 
+Uutta, tuoreimmat ensin
+ 
+<ul> 
+<li>news-haku lis&auml;tty 15.10.06
+<li>web-haun tulosikkuna raahattavissa
+<li>1.9.06 uusi nuoliosoitin (joulukuusi p&auml;&auml;ll&auml;&auml;n). 
+<li>pikkukartta keskittyy jos osoitin uhkaa kadota n&auml;kyvist&auml;
+<li>8.8.06 ulkomaanhaku mahdollista. Poista ruksi 'FI'-boxista.
+<li>paikkakuntahaku Suomesta Maps Apilla ja web-haku Google Ajax Search Apilla
+<li>punainen osoitinmarkkeri on raahattavissa
+<li>kaksoisklikkauszoom animaatiolla, oikean napin kaksoisklikkaus loitontaa
+<li>28.7.06 koodi kirjoitettu api-versio 2 syntaksilla. Suomen kartat.
+<li>20.12.05 punainen osoitinpallo pikkukartalle
+<li>Nuppineulojen 'vinkit' toiminnassa
+<li>13.12.05 v&auml;limatkan&auml;ytt&ouml; mouseoverina! Taulukkotietojen raavinta ja sy&ouml;tt&ouml; kesken.
+ 
+ 
+<li>N&auml;pp&auml;inoikotiet - kokeile nuolin&auml;pp&auml;imi&auml; ja [+] [-]
+<li>Kartan nimi poistuu kun siirryt&auml;&auml;n
+<li>Kartan nimi ilmestyy kun se valitaan infoikkunan painikkeesta
+<li>Nuppineulojen mouseover n&auml;ytt&auml;&auml; kaupungin nimen, jatkossa muutakin
+ 
+<li>Pikkukartan painikkeet siirretty pois infokuplien tielt&auml;
+<li>Koordinaattin&auml;ytt&ouml;
+ 
+<li>6.11.05. Kansainv&auml;listen vieraitten ruuhka, kun saimme huomiota GoogleMapsManiassa
+<li>Mittakaavaviivain
+<li>LiikkuVille sai nimen
+<li>Infokuplien linkit muutettu avautumaan uudessa ikkunassa
+<li>Linkkirimpsu karttojen alle
+<li>Infokupliin [ &gt;&gt; ]-painikkeet ohjaamaan isoa karttaa
+<li>Kartan ohjautuminen nuppineulojen klikkauksilla poistettu
+<li>Hiiren nappizoom poistettu
+<li>Lappi n&auml;ytti niin tyhj&auml;lt&auml;, ett&auml; sit&auml; ruvettiin t&auml;ytt&auml;m&auml;&auml;n 
+ 
+hiihtokeskuksilla
+ 
+ 
+ 
+<li>Zoomaus hiiren rullalla poistettu, tilalle vasen-oikea nappizoom
+<li>Zoomaus hiiren rullalla
+<li>Kahden kartan ratkaisu
+<li>Ensimm&auml;inen versio julkaistiin 8.7.2005
+ 
+ 
+</ul> 
+</div> 
+ 
+ 
+ 
+<script language="Javascript" type="text/javascript"> 
+//<![CDATA[
+ 
+///AJAX search code
+ 
+// Create a search control
+var searchControl = new GSearchControl();
+ 
+// searchers
+//var localSearch = new GlocalSearch();
+//searchControl.addSearcher(localSearch);
+searchControl.addSearcher(new GwebSearch());
+searchControl.addSearcher(new GvideoSearch());
+searchControl.addSearcher(new GblogSearch());
+searchControl.addSearcher(new GnewsSearch());
+ 
+//localSearch.setCenterPoint("");
+ 
+var drawOptions = new GdrawOptions();
+ 
+//drawOptions.setDrawMode(GSearchControl.DRAW_MODE_TABBED);
+drawOptions.setDrawMode(GSearchControl.DRAW_MODE_TABBED);
+drawOptions.setInput(document.getElementById("haku"));
+searchControl.draw(document.getElementById("searchcontrol"), drawOptions);
+ 
+// Execute an inital search
+searchControl.execute("Helsinki");
+ 
+////GDraggableObject test
+new GDraggableObject(document.getElementById("searchcontrol"));
+ 
+ 
+ 
+//////////////Idea and scripting by Esa
+//////////////Thanks for the API community
+ 
+ 
+    //]]>
+    </script> 
+ 
+<!-- Start of StatCounter Code --> 
+<script type="text/javascript" language="javascript"> 
+var sc_project=1024300; 
+var sc_invisible=1; 
+var sc_partition=9; 
+var sc_security="65041792"; 
+ 
+</script> 
+<script type="text/javascript" language="javascript" 
+
+src="http://www.statcounter.com/counter/counter.js"></script><noscript><a href="http://www.statcounter.com/" 
+
+target="_blank"><img  
+
+src="http://c10.statcounter.com/counter.php?sc_project=1024300&amp;java=0&amp;security=65041792&amp;invisible=0" 
+
+alt="website hit counter" border="0"></a> </noscript> 
+ 
+<!-- End of StatCounter Code --> 
+ 
+  </body> 
+</html> 
+ 

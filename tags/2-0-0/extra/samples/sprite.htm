@@ -1,0 +1,163 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml">
+<head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
+<title>sprites</title>
+
+<style type="text/css">
+body {font-family: Arial; font-size: small; background-color: #CCCCFF; margin: 10px;}
+#forehead {text-align:left; margin-left: 20px;}
+#novel {width:400px; margin:20px; float:right;}
+#AdSense {margin:20px;}
+#sprite {margin : 10px;}
+A:hover {color: red; text-decoration: underline overline;}
+td {vertical-align:top;}
+.map {border: 6px solid silver;}
+</style>
+
+<script 
+src="http://maps.google.com/maps?file=api&v=2&key=ABQIAAAAYxpy0HiKBWXiyhVrpVqkshTzRM_GTxWOqTaXXRScn8KwUCiJWhT96ZS2MOLTq-SEmmJL1_cNrib9tA" type="text/javascript">
+</script>
+
+
+</head>
+<body onunload="GUnload()">
+<table>
+  <tr>
+    <td>
+      <div id="forehead"><h2> Esa's Google Maps API experiments.</h2></div>
+    </td>
+    <td>
+    </td>
+    <td rowspan="4">
+      <div id="novel">
+<h3>Sprites. Obey your custom marker icon thirst.</h3>
+<p>Sprites are are a fascinating technique for handling icon image sets. Now it is available in GMaps API. Hosting of large image sets is no more a nightmare. Also preloading of separate icon images is avoided. Less http requests, faster loading.</p>
+<p>'Sprite' was an everyday word in computer graphics during the 8-bit era. It meant a graphics object that was movable over the background. Computers like Commodore 64 had a special circuitry in their hardware that made sprites possible. All those funny moving creatures were sprites. Violent creatures came later.</p>
+<p>At some point it was invented that you can display just a certain part of a sprite. We can have a single image that contains a grid of all the icons we need. Only certain part of the image is shown.</p>
+<p>maps.google.com has been using sprite technology for a long time for the business result markers. Backgrounds of the buttons on the page are sprites too. Infowindow bubble is also formed from a single image.</p>
+<p>Sprite technology for markers has been available with api since v2.119. Only vertical sprites are supported so far.</p>
+<p>GIcon() has a property called .sprite. It is an object with two properties sprite.image and sprite.top. (Url of the image file and the vertical offset)</p>
+<p>The marker image used on this page is 340px high and it contains ten markers. So the .top property is set in 34px steps. <input type="button" onclick="randomMarkers(true)" value="n * 34"/></p>
+<p>See what happens with random top value. <input type="button" onclick="randomMarkers()" value="random"/></p>
+<p>I would recommend composing a function for sprite handling. Something like:</p>
+<pre>
+function sprite(number){
+  var icon = new GIcon(G_DEFAULT_ICON);
+    icon.sprite = {};
+    icon.sprite.image = "mysprite.png";
+    icon.sprite.top = number * 34;
+  return icon;
+}
+</pre>
+<p>Note that sprite property is so far <strong>undocumented</strong> and thus not recommended to use on serious pages. Experimental use is strongly recommended. Star the <a href="http://code.google.com/p/gmaps-api-issues/issues/detail?id=760">request</a> if you want sprite to be documented.</p>
+<p><a href="http://esa.ilmari.googlepages.com/hugesprite.htm">A sprite &gt; 5000px high</a></p> 
+<p><a href="http://koti.mbnet.fi/ojalesa/exam/index.html">More experiments</a></p> 
+      </div>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <div id="map" class="map" style="width: 512px; height: 512px"></div>
+    </td>
+	<td rowspan="3">
+	  <img id="sprite"src="http://maps.google.com/intl/fi_ALL/mapfiles/all_markers.png" alt=""/>
+	</td>
+  </tr>
+  <tr>
+    <td>
+      <div id="AdSense">
+<script type="text/javascript"><!--
+google_ad_client = "pub-3649938975494252";
+google_ad_width = 468;
+google_ad_height = 60;
+google_ad_format = "468x60_as";
+google_ad_type = "text_image";
+google_ad_channel ="2676021345";
+google_color_border = "CCCCFF";
+google_color_bg = "CCCCFF";
+google_color_link = "0000CC";
+google_color_url = "008000";
+google_color_text = "000000";
+//--></script>
+<script type="text/javascript"
+  src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
+</script>
+      </div>
+    </td>
+  </tr>
+  <tr>
+    <td>
+    <img src="http://maps.google.com/mapfiles/hpimgs7.png" alt="" / >
+    </td>
+  </tr>
+</table>
+<script type="text/javascript">
+
+
+/**
+* Map
+*/
+var map = new GMap2(document.getElementById("map")); 
+map.setCenter(new GLatLng(60.17 ,24.94), 13);
+map.addControl(new GLargeMapControl());
+var markerBounds = new GLatLngBounds();
+var bounds = map.getBounds();
+var span = bounds.toSpan();
+var southWest = bounds.getSouthWest();
+var northEast = bounds.getNorthEast();
+
+
+/**
+ * sprites function
+ * Esa 2008
+ */
+function sprite(id){
+  var icon = new GIcon(G_DEFAULT_ICON);
+      icon.sprite = {};
+	  icon.sprite.image = "http://maps.google.com/intl/fi_ALL/mapfiles/all_markers.png";
+      icon.sprite.top = id * 34;
+  return icon;
+}
+
+/**
+* Random 'top' value generator and
+* 10 random markers 
+ */
+function random(integer){
+  var random = Math.random() * 9; // 0...9 float
+  if(integer)random = Math.floor(Math.random() * 10); // 0...9 integer
+  return random;
+}
+
+function randomMarkers(integer){
+  map.clearOverlays();
+  for (var i=0; i<10; i++){
+    var point = new GLatLng(southWest.lat() + span.lat() * Math.random(),
+						    southWest.lng() + span.lng() * Math.random());
+    var spriteMarker = (new GMarker(point,{draggable:true, icon:sprite(random(integer))}));
+    map.addOverlay(spriteMarker);
+    markerBounds.extend(point);
+  }
+}
+
+
+
+window.onload = function(){randomMarkers(true)};
+
+
+</script>
+
+<!-- StatCounter Code         If you copy the map code, please delete this script from your page-->
+<script type="text/javascript">
+var sc_project=4095481; 
+var sc_invisible=1; 
+var sc_partition=49; 
+var sc_click_stat=1; 
+var sc_security="eaaaee4b"; 
+</script>
+
+<script type="text/javascript" src="http://www.statcounter.com/counter/counter_xhtml.js"></script><noscript><div class="statcounter"><a title="web stats" class="statcounter" href="http://www.statcounter.com/free_web_stats.html"><img class="statcounter" src="http://c.statcounter.com/4095481/0/eaaaee4b/1/" alt="web stats" /></a></div></noscript>
+
+</body>
+</html>

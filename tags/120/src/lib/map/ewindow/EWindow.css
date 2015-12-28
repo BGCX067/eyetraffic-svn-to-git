@@ -1,0 +1,42 @@
+.EWTitle {
+    background-color: #ffdd88;
+    font-weight: bold;
+    border-bottom: 1px solid #ee8888;
+    text-align: center;
+}
+
+.estyle1 {
+    background-color: #ffffff;
+    border: 3px black solid;
+}
+
+.estyle2 {
+    background-color: #ffffff;
+    border: 1px black solid;
+}
+
+.estyle3 {
+    background-color: #ffffff;
+    border: 10px black solid;
+    padding: 10px;
+}
+
+.estyle4 {
+    background-color: #ffffff;
+    border: 10px black double;
+    padding: 10px;
+}
+
+.estyle5 {
+    background-color: #ffffff;
+    border-bottom: 3px black solid;
+    border-left: 3px #aaaaaa solid;
+    border-top: 3px #aaaaaa solid;
+    border-right: 3px black solid;
+    padding: 5px;
+}
+
+.estyle6 {
+    background-color: #ffffff;
+    border: 2px black solid;
+}
